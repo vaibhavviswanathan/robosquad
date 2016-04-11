@@ -171,6 +171,79 @@ namespace DrRobot.JaguarControl
 
         }
 
+        // KF variables
+        public class Matrix // generic 3x3
+        {
+            public double v11, v12, v13, v21, v22, v23, v31, v32, v33;
+            public Matrix(double _v11, double _v12, double _v13,
+                double _v21, double _v22, double _v23,
+                double _v31, double _v32, double _v33)
+            {
+                v11 = _v11;
+                v12 = _v12;
+                v13 = _v13;
+                v21 = _v21;
+                v22 = _v22;
+                v23 = _v23;
+                v31 = _v31;
+                v32 = _v32;
+                v33 = _v33;
+            }
+
+            public Matrix()
+            {
+                v11 = 1;
+                v12 = 0;
+                v12 = 0;
+                v21 = 0;
+                v22 = 1;
+                v23 = 0;
+                v31 = 0;
+                v32 = 0;
+                v33 = 0;
+            }
+
+            public static Matrix Transpose(Matrix M1)
+            {
+                return new Matrix(M1.v11, M1.v21, M1.v31, M1.v12, M1.v22, M1.v32, M1.v13, M1.v23, M1.v33);
+            }
+
+            public static Matrix MxMultiply(Matrix M1, Matrix M2)
+            {
+                double v11 = M1.v11 * M2.v11 + M1.v12 * M2.v21 + M1.v13 * M2.v31;
+                double v12 = M1.v11 * M2.v12 + M1.v12 * M2.v22 + M1.v13 * M2.v32;
+                double v13 = M1.v11 * M2.v13 + M1.v12 * M2.v23 + M1.v13 * M2.v33;
+
+                double v21 = M1.v21 * M2.v11 + M1.v22 * M2.v21 + M1.v23 * M2.v31;
+                double v22 = M1.v21 * M2.v12 + M1.v22 * M2.v22 + M1.v23 * M2.v32;
+                double v23 = M1.v21 * M2.v13 + M1.v22 * M2.v23 + M1.v23 * M2.v33;
+
+                double v31 = M1.v31 * M2.v11 + M1.v32 * M2.v21 + M1.v33 * M2.v31;
+                double v32 = M1.v31 * M2.v12 + M1.v32 * M2.v22 + M1.v33 * M2.v32;
+                double v33 = M1.v31 * M2.v13 + M1.v32 * M2.v23 + M1.v33 * M2.v33;
+
+                return new Matrix(v11, v12, v13, v21, v22, v23, v31, v32, v33);
+            }
+
+            public static Matrix MxAdd(Matrix M1, Matrix M2)
+            {
+                return new Matrix(M1.v11 + M2.v11, M1.v12 + M2.v12, M1.v13 + M2.v13,
+                    M1.v21 + M2.v21, M1.v22 + M2.v22, M1.v23 + M2.v23,
+                    M1.v31 + M2.v31, M1.v32 + M2.v32, M1.v33 + M2.v33);
+            }
+
+            public static Matrix MxScale(Matrix M1, double s)
+            {
+                return new Matrix(s * M1.v11, s * M1.v12, s * M1.v13,
+                    s * M1.v21, s * M1.v22, s * M1.v23,
+                    s * M1.v31, s * M1.v32, s * M1.v33);
+            }
+
+        }
+
+        public Matrix P_t;
+        public double x_kf, y_kf, t_kf;
+
 
         #endregion
 
@@ -261,6 +334,15 @@ namespace DrRobot.JaguarControl
             trajList[0] = new Node(0, 0, 0, 0);
             trajSize = 0;
 
+
+            // KF stuff
+            x_kf = x_est;
+            y_kf = y_est;
+            t_kf = t_est;
+
+            P_t = new Matrix(1, 0, 0,
+                0, 1, 0,
+                0, 0, 1); // TODO MAKE THESE BETTER
 
         }
 
@@ -1138,6 +1220,81 @@ namespace DrRobot.JaguarControl
 
 
             // ****************** Additional Student Code: End   ************
+        }
+
+        
+
+        public void LocalizeRealWithKalmanFilter()
+        {
+            // -- Prediction
+            
+            // propagate x_t = f(x_t-1, u_t)
+            double x_prime = x; // using LocalizeRealWithOdometry for now
+            double y_prime = y;
+            double t_prime = t;
+            // get Fx, Fu
+            Matrix Fx = getFx();
+            Matrix Fu = getFu();
+
+            // propegate P 
+            Matrix Q = new Matrix(1, 0, 0, 0, 1, 0, 0, 0, 0); // TODO
+            Matrix P_t_prime_A = Matrix.MxMultiply(Fx, Matrix.MxMultiply(P_t, Matrix.Transpose(Fx)));
+            Matrix P_t_prime_B = Matrix.MxMultiply(Fu, Matrix.MxMultiply(Q, Matrix.Transpose(Fu)));
+            Matrix P_t_prime = Matrix.MxAdd(P_t_prime_A, P_t_prime_B);
+
+            // -- Correction
+
+            int i = 1;
+            double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i);
+            double z_i = getZi(i);
+            double v = z_i - z_i_exp;
+
+            // get H_i
+            Matrix H_i = getHi(x_prime, y_prime, t_prime, i);
+            double R_i = getRi(i);
+            Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
+            double SigmaIN = SigmaIN_Mx.v11 + R_i;
+            Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
+                0, 1 / SigmaIN, 0,
+                0, 0, 1 / SigmaIN);
+            Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
+            // update x_t, P_t
+            x_kf = x_prime - K_t.v11 * v;
+            y_kf = y_prime - K_t.v21 * v;
+            t_kf = t_prime - K_t.v31 * v;
+
+            P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+
+        }
+
+        public Matrix getFx()
+        {
+            return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya
+        }
+
+        public Matrix getFu()
+        {
+            return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya 
+            // Make the 3x2 a 3x3 by padding with 0s.
+        }
+
+        public double getZiexp(double x, double y, double t, int i){ // TODO
+            return 0;
+        }
+
+        public double getZi(int i) // TODO
+        {
+            return 0;
+        }
+
+        public Matrix getHi(double x, double y, double t, int i) // TODO Aishvarya (May want to use getZiexp)
+        {
+            return new Matrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
+        }
+
+        public double getRi(int i) // TODO use LaserRange error model
+        {
+            return 0;
         }
 
 
