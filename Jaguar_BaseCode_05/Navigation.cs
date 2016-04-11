@@ -1244,57 +1244,77 @@ namespace DrRobot.JaguarControl
 
             // -- Correction
 
-            int i = 1; // TODO iterate over the number of rays we want to use.. kinda
-            double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i);
-            double z_i = getZi(i);
-            double v = z_i - z_i_exp;
+            int numArcs = 5; // could be more.. just using 5 evenly spaced arcs around the laserRange
+            for (int i = 0; i <= numArcs; i++) // innovate for each sensor measurement one at a time
+            {
+                // get z, zexpected, v
+                double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i, numArcs);
+                double z_i = getZi(i, numArcs);
+                double v = z_i - z_i_exp;
 
-            // get H_i
-            Matrix H_i = getHi(x_prime, y_prime, t_prime, i);
-            double R_i = getRi(i);
-            Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
-            double SigmaIN = SigmaIN_Mx.v11 + R_i;
-            Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
-                0, 1 / SigmaIN, 0,
-                0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
-            Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
-            // update x_t, P_t
-            x_kf = x_prime - K_t.v11 * v;
-            y_kf = y_prime - K_t.v21 * v;
-            t_kf = t_prime - K_t.v31 * v;
+                // get H_i
+                Matrix H_i = getHi(x_prime, y_prime, t_prime, i, numArcs);
+                double R_i = getRi(z_i);
+                Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
+                double SigmaIN = SigmaIN_Mx.v11 + R_i;
+                Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
+                    0, 1 / SigmaIN, 0,
+                    0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
+                Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
+                // update x_t, P_t
+                x_prime = x_prime - K_t.v11 * v;
+                y_prime = y_prime - K_t.v21 * v;
+                t_prime = t_prime - K_t.v31 * v;
 
-            P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+                P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+            }
+            x_kf = x_prime;
+            y_kf = y_prime;
+            t_kf = t_prime;
 
         }
 
-        public Matrix getFx()
+        public Matrix getFx() // you may need some arguments
         {
             return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya
         }
 
-        public Matrix getFu()
+        public Matrix getFu() // you may need some arguments
         {
             return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya 
             // Make the 3x2 a 3x3 by padding with 0s.
         }
 
-        public double getZiexp(double x, double y, double t, int i){ // TODO
-            return 0;
+        public double getZiexp(double x, double y, double t, int i, int numArcs)
+        { 
+            int laseriter = (int)Math.Round(((double)i / numArcs) * (LaserData.Length));
+            double laserangle = laserAngles[laseriter];
+            double offset = -Math.PI / 2 + laserangle;
+            double dist = map.GetClosestWallDistance(x, y, t + offset);
+            return dist / 1000; // in meters
         }
 
-        public double getZi(int i) // TODO
+        public double getZi(int i, int numArcs)
         {
-            return 0;
+            int laseriter = (int)Math.Round(((double)i / numArcs) * (LaserData.Length));
+            double laserangle = laserAngles[laseriter];
+            double sensor_measurement = (double)(LaserData[laseriter]) / 1000;
+            return sensor_measurement;
         }
 
-        public Matrix getHi(double x, double y, double t, int i) // TODO Aishvarya (May want to use getZiexp)
+        public Matrix getHi(double x, double y, double t, int i, int numArcs) // TODO Aishvarya (May want to use getZiexp)
         {
             return new Matrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
         }
 
-        public double getRi(int i) // TODO use LaserRange error model
+        public double getRi(double sensor_measurement)
         {
-            return 0;
+            double sigma_laser_percent = 0.01; // ( 1%, from datasheet);
+            double sigma_wall = 0.03; // cm
+
+            double sigma_laser = Math.Max(0.01, sigma_laser_percent * sensor_measurement);
+            double sigma_squared = 5 * Math.Pow(sigma_laser, 2) + Math.Pow(sigma_wall, 2); // the 5 is an arbitrary increase to be conservative
+            return sigma_squared;
         }
 
 
