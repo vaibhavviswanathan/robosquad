@@ -825,10 +825,19 @@ namespace DrRobot.JaguarControl
                 Node randExpansionNode = NodesInCells[occupiedCellsList[randCellNumber], randNodeNumber];
                 
                 
-                // Compute random distance for expanded node
+                // Determine random control inputs
+                // compute distance travelled in timestep
+  			    randDistanceR = randGenerator.NextDouble()*5;
+            	randDistanceL = randGenerator.NextDouble()*5;
+
+            	// Distance and orientation to expanded noode
+           		double randDist = (randDistanceR + randDistanceL) / 2;
+            	double randOrientation = (randDistanceR - randDistanceL) / (2 * robotRadius);
+/*
+                // Compute distance for expanded node
                 double randDist = 5.0*randGenerator.NextDouble();
                 double randOrientation = -Math.PI + 2*Math.PI * randGenerator.NextDouble();
-
+*/
                 // Determine x and y position of expanded node
                 double newX = randExpansionNode.x + randDist * Math.Cos(randOrientation);
                 double newY = randExpansionNode.y + randDist * Math.Sin(randOrientation);
@@ -944,14 +953,14 @@ namespace DrRobot.JaguarControl
             trajSize = i;
             trajCurrentNode = 0;
 
-            OptimizeTraj();
+            //OptimizeTrajBrute();
 
             return;
         }
 
-        void OptimizeTraj(){
-            Tuple<double, int[]> optTrajAuxOut = OptimizeTrajAux(0, new int[0]);
-            int [] trajListInts = optTrajAuxOut.Item2;
+        void OptimizeTrajBrute(){
+            Tuple<double, int[]> optTrajBruteAuxOut = OptimizeTrajBruteAux(0, new int[0]);
+            int [] trajListInts = optTrajBruteAuxOut.Item2;
             Node[] trajListTemp = new Node[trajListInts.Length];
             for (int i = 0; i < trajListInts.Length; i++)
             {
