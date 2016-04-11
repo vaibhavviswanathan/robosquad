@@ -987,7 +987,7 @@ namespace DrRobot.JaguarControl
         }
 
         // This function returns the sum of squared distances from node to goal
-        Tuple<double, int[]> OptimizeTrajAux(int trajNode, int[] trajNodeParents)
+        Tuple<double, int[]> OptimizeTrajBruteAux(int trajNode, int[] trajNodeParents)
         {
             Node currentNode = trajList[trajNode];
             Node nextNode;
@@ -1029,7 +1029,7 @@ namespace DrRobot.JaguarControl
                 nextNode = trajList[i];
                 if(map.CollisionFound(trajList[trajNode], trajList[trajSize-1], robotRadius)) continue;
                 // else compare i's dist to minDist
-                Tuple<double, int[]> trialNodeOutput = OptimizeTrajAux(i, trajNodeParentsNew);
+                Tuple<double, int[]> trialNodeOutput = OptimizeTrajBruteAux(i, trajNodeParentsNew);
                 double dist = trialNodeOutput.Item1;
                 dist += Math.Pow(nextNode.x - currentNode.x, 2) + Math.Pow(nextNode.y - currentNode.y, 2); // add distance to i
                 int[] nextPath = trialNodeOutput.Item2;
