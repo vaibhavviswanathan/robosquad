@@ -1244,7 +1244,7 @@ namespace DrRobot.JaguarControl
 
             // -- Correction
 
-            int i = 1;
+            int i = 1; // TODO iterate over the number of rays we want to use.. kinda
             double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i);
             double z_i = getZi(i);
             double v = z_i - z_i_exp;
@@ -1256,7 +1256,7 @@ namespace DrRobot.JaguarControl
             double SigmaIN = SigmaIN_Mx.v11 + R_i;
             Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
                 0, 1 / SigmaIN, 0,
-                0, 0, 1 / SigmaIN);
+                0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
             Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
             // update x_t, P_t
             x_kf = x_prime - K_t.v11 * v;
