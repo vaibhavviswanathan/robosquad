@@ -35,7 +35,7 @@ namespace DrRobot.JaguarControl
             slopes = new double[numMapSegments];
             intercepts = new double[numMapSegments];
             segmentSizes = new double[numMapSegments];
-
+/*
             mapSegmentCorners[0, 0, 0] = 3.38 + 5.79 + 3.55 / 2;
 	        mapSegmentCorners[0,0,1] = 2.794;
             mapSegmentCorners[0, 1, 0] = -3.38 - 5.79 - 3.55 / 2;
@@ -75,6 +75,288 @@ namespace DrRobot.JaguarControl
             mapSegmentCorners[7, 0, 1] = -2.74 - 2.31;
             mapSegmentCorners[7, 1, 0] = -5.03/2;
             mapSegmentCorners[7, 1, 1] = -2.74 - 2.31;
+*/
+
+
+// top area (close to Parsons) walls
+mapSegmentCorners[0,0,0] = -5.04 / 2;
+mapSegmentCorners[0,0,1] = 2.36;
+mapSegmentCorners[0,1,0] = -5.04 / 2;
+mapSegmentCorners[0,1,1] = 2.36 + 2.0;
+
+mapSegmentCorners[1,0,0] = 5.04 / 2;
+mapSegmentCorners[1,0,1] = 2.36;
+mapSegmentCorners[1,1,0] = 5.04 / 2;
+mapSegmentCorners[1,1,1] = 2.36 + 2.0;
+
+mapSegmentCorners[2,0,0] = 5.04 / 2;
+mapSegmentCorners[2,0,1] = 2.36;
+mapSegmentCorners[2,1,0] = -5.04 / 2;
+mapSegmentCorners[2,1,1] = 2.36;
+
+mapSegmentCorners[3,0,0] = -4.82;
+mapSegmentCorners[3,0,1] = 0.0;
+mapSegmentCorners[3,1,0] = -4.82;
+mapSegmentCorners[3,1,1] = 2.36 + 2.0;
+
+mapSegmentCorners[4,0,0] = 4.82;
+mapSegmentCorners[4,0,1] = 0.0;
+mapSegmentCorners[4,1,0] = 4.82;
+mapSegmentCorners[4,1,1] = 2.36 + 2.0;
+
+mapSegmentCorners[5,0,0] = -1.77;
+mapSegmentCorners[5,0,1] = 0.0;
+mapSegmentCorners[5,1,0] = -4.82;
+mapSegmentCorners[5,1,1] = 0.0;
+
+mapSegmentCorners[6,0,0] = 1.77;
+mapSegmentCorners[6,0,1] = 0.0;
+mapSegmentCorners[6,1,0] = 4.82;
+mapSegmentCorners[6,1,1] = 0.0;
+
+mapSegmentCorners[7,0,0] = -1.77;
+mapSegmentCorners[7,0,1] = 0.0;
+mapSegmentCorners[7,1,0] = -1.77;
+mapSegmentCorners[7,1,1] = -2.74;
+
+mapSegmentCorners[8,0,0] = 1.77;
+mapSegmentCorners[8,0,1] = 0.0;
+mapSegmentCorners[8,1,0] = 1.77;
+mapSegmentCorners[8,1,1] = -2.74;
+
+mapSegmentCorners[9,0,0] = -1.77;
+mapSegmentCorners[9,0,1] = -2.74;
+mapSegmentCorners[9,1,0] = -1.77 - 5.80;
+mapSegmentCorners[9,1,1] = -2.74;
+
+mapSegmentCorners[10,0,0] = 1.77;
+mapSegmentCorners[10,0,1] = -2.74;
+mapSegmentCorners[10,1,0] = 1.77 + 5.80;
+mapSegmentCorners[10,1,1] = -2.74;
+
+//bottom area walls
+mapSegmentCorners[11,0,0] = -1.77;
+mapSegmentCorners[11,0,1] = -19.82;
+mapSegmentCorners[11,1,0] = -1.77 - 1.82 - 3.97;
+mapSegmentCorners[11,1,1] = -19.82;
+
+mapSegmentCorners[12,0,0] = 1.77;
+mapSegmentCorners[12,0,1] = -19.82;
+mapSegmentCorners[12,1,0] = 14.86;
+mapSegmentCorners[12,1,1] = -19.82;
+
+mapSegmentCorners[13,0,0] = -1.77;
+mapSegmentCorners[13,0,1] = -19.82;
+mapSegmentCorners[13,1,0] = -1.77;
+mapSegmentCorners[13,1,1] = -23.47;
+
+mapSegmentCorners[14,0,0] = 1.77;
+mapSegmentCorners[14,0,1] = -19.82;
+mapSegmentCorners[14,1,0] = 1.77;
+mapSegmentCorners[14,1,1] = -23.47;
+
+mapSegmentCorners[15,0,0] = -1.77;
+mapSegmentCorners[15,0,1] = -23.47;
+mapSegmentCorners[15,1,0] = -1.77 - 1.82;
+mapSegmentCorners[15,1,1] = -23.47;
+
+mapSegmentCorners[16,0,0] = 1.77;
+mapSegmentCorners[16,0,1] = -23.47;
+mapSegmentCorners[16,1,0] = 10.90;
+mapSegmentCorners[16,1,1] = -23.47;
+
+mapSegmentCorners[17,0,0] = -1.77 - 1.82;
+mapSegmentCorners[17,0,1] = -23.47;
+mapSegmentCorners[17,1,0] = -1.77 - 1.82;
+mapSegmentCorners[17,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[18,0,0] = 10.90;
+mapSegmentCorners[18,0,1] = -23.47;
+mapSegmentCorners[18,1,0] = 10.90;
+mapSegmentCorners[18,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[19,0,0] = -1.77 - 1.82 - 3.97;
+mapSegmentCorners[19,0,1] = -19.82;
+mapSegmentCorners[19,1,0] = -1.77 - 1.82 - 3.97;
+mapSegmentCorners[19,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[20,0,0] = 14.86;
+mapSegmentCorners[20,0,1] = -19.82;
+mapSegmentCorners[20,1,0] = 14.86;
+mapSegmentCorners[20,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[21,0,0] = -1.77 - 1.82;
+mapSegmentCorners[21,0,1] = -23.47 - 3.50;
+mapSegmentCorners[21,1,0] = -1.77 - 1.82 - 3.97;
+mapSegmentCorners[21,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[22,0,0] = 10.90;
+mapSegmentCorners[22,0,1] = -23.47 - 3.50;
+mapSegmentCorners[22,1,0] = 14.86;
+mapSegmentCorners[22,1,1] = -23.47 - 3.50;
+
+mapSegmentCorners[23,0,0] = -1.77 - 1.82;
+mapSegmentCorners[23,0,1] = -23.47 - 3.50 - 2.90;
+mapSegmentCorners[23,1,0] = -1.77 - 1.82 - 3.97;
+mapSegmentCorners[23,1,1] = -23.47 - 3.50 - 2.90;
+
+mapSegmentCorners[24,0,0] = 10.90;
+mapSegmentCorners[24,0,1] = -23.47 - 3.50 - 2.90;
+mapSegmentCorners[24,1,0] = 14.86;
+mapSegmentCorners[24,1,1] = -23.47 - 3.50 - 2.90;
+
+mapSegmentCorners[25,0,0] = -1.77 - 1.82;
+mapSegmentCorners[25,0,1] = -23.47 - 3.50 - 2.90;
+mapSegmentCorners[25,1,0] = -1.77 - 1.82;
+mapSegmentCorners[25,1,1] = -33.37;
+
+mapSegmentCorners[26,0,0] = 10.90;
+mapSegmentCorners[26,0,1] = -23.47 - 3.50 - 2.90;
+mapSegmentCorners[26,1,0] = 10.90;
+mapSegmentCorners[26,1,1] = -33.37;
+
+mapSegmentCorners[27,0,0] = -1.77;
+mapSegmentCorners[27,0,1] = -33.37;
+mapSegmentCorners[27,1,0] = -1.77 - 1.82;
+mapSegmentCorners[27,1,1] = -33.37;
+
+mapSegmentCorners[28,0,0] = 1.77;
+mapSegmentCorners[28,0,1] = -33.37;
+mapSegmentCorners[28,1,0] = 10.90;
+mapSegmentCorners[28,1,1] = -33.37;
+
+mapSegmentCorners[29,0,0] = -1.77;
+mapSegmentCorners[29,0,1] = -33.37;
+mapSegmentCorners[29,1,0] = -1.77;
+mapSegmentCorners[29,1,1] = -37.02;
+
+mapSegmentCorners[30,0,0] = 1.77;
+mapSegmentCorners[30,0,1] = -33.37;
+mapSegmentCorners[30,1,0] = 1.77;
+mapSegmentCorners[30,1,1] = -37.02;
+
+// pillars
+mapSegmentCorners[31,0,0] = -3.35 - 0.34/2;
+mapSegmentCorners[31,0,1] = -9.63;
+mapSegmentCorners[31,1,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[31,1,1] = -9.63;
+
+mapSegmentCorners[32,0,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[32,0,1] = -9.63 - 0.29;
+mapSegmentCorners[32,1,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[32,1,1] = -9.63;
+
+mapSegmentCorners[33,0,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[33,0,1] = -9.63 - 0.29;
+mapSegmentCorners[33,1,0] = -3.35 - 0.34/2;
+mapSegmentCorners[33,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[34,0,0] = -3.35 - 0.34/2;
+mapSegmentCorners[34,0,1] = -9.63;
+mapSegmentCorners[34,1,0] = -3.35 - 0.34/2;
+mapSegmentCorners[34,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[35,0,0] = -0.34/2;
+mapSegmentCorners[35,0,1] = -9.63;
+mapSegmentCorners[35,1,0] = 0.34/2;
+mapSegmentCorners[35,1,1] = -9.63;
+
+mapSegmentCorners[36,0,0] = -0.34/2;
+mapSegmentCorners[36,0,1] = -9.63 - 0.29;
+mapSegmentCorners[36,1,0] = -0.34/2;
+mapSegmentCorners[36,1,1] = -9.63;
+
+mapSegmentCorners[37,0,0] = -0.34/2;
+mapSegmentCorners[37,0,1] = -9.63 - 0.29;
+mapSegmentCorners[37,1,0] = 0.34/2;
+mapSegmentCorners[37,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[38,0,0] = 0.34/2;
+mapSegmentCorners[38,0,1] = -9.63;
+mapSegmentCorners[38,1,0] = 0.34/2;
+mapSegmentCorners[38,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[39,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[39,0,1] = -9.63;
+mapSegmentCorners[39,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[39,1,1] = -9.63;
+
+mapSegmentCorners[40,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[40,0,1] = -9.63 - 0.29;
+mapSegmentCorners[40,1,0] = 3.35 + 0.34/2;
+mapSegmentCorners[40,1,1] = -9.63;
+
+mapSegmentCorners[41,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[41,0,1] = -9.63 - 0.29;
+mapSegmentCorners[41,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[41,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[42,0,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[42,0,1] = -9.63;
+mapSegmentCorners[42,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[42,1,1] = -9.63 - 0.29;
+
+mapSegmentCorners[43,0,0] = -3.35 - 0.34/2;
+mapSegmentCorners[43,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[43,1,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[43,1,1] = -9.63 - 0.29 - 3.16;
+
+mapSegmentCorners[44,0,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[44,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[44,1,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[44,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[45,0,0] = -3.35 - 0.34/2 - 0.34;
+mapSegmentCorners[45,0,1] = -9.63 - 0.29 - 3.16 - 0.29;
+mapSegmentCorners[45,1,0] = -3.35 - 0.34/2;
+mapSegmentCorners[45,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[46,0,0] = -3.35 - 0.34/2;
+mapSegmentCorners[46,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[46,1,0] = -3.35 - 0.34/2;
+mapSegmentCorners[46,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[47,0,0] = -0.34/2;
+mapSegmentCorners[47,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[47,1,0] = 0.34/2;
+mapSegmentCorners[47,1,1] = -9.63 - 0.29 - 3.16;
+
+mapSegmentCorners[48,0,0] = -0.34/2;
+mapSegmentCorners[48,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[48,1,0] = -0.34/2;
+mapSegmentCorners[48,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[49,0,0] = -0.34/2;
+mapSegmentCorners[49,0,1] = -9.63 - 0.29 - 3.16 - 0.29;
+mapSegmentCorners[49,1,0] = 0.34/2;
+mapSegmentCorners[49,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[50,0,0] = 0.34/2;
+mapSegmentCorners[50,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[50,1,0] = 0.34/2;
+mapSegmentCorners[50,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[51,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[51,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[51,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[51,1,1] = -9.63 - 0.29 - 3.16;
+
+mapSegmentCorners[52,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[52,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[52,1,0] = 3.35 + 0.34/2;
+mapSegmentCorners[52,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[53,0,0] = 3.35 + 0.34/2;
+mapSegmentCorners[53,0,1] = -9.63 - 0.29 - 3.16 - 0.29;
+mapSegmentCorners[53,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[53,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+mapSegmentCorners[54,0,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[54,0,1] = -9.63 - 0.29 - 3.16;
+mapSegmentCorners[54,1,0] = 3.35 + 0.34/2 + 0.34;
+mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
+
+
             // ****************** Additional Student Code: End   ************
 
 
