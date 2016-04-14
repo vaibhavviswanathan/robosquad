@@ -126,6 +126,8 @@ namespace DrRobot.JaguarControl
 
         // ---- previous lab stuff
 
+        bool weShouldReSample;
+
         DateTime previousTimeL;
         double measured_timestepL;
         DateTime previousTimeR;
@@ -200,7 +202,7 @@ namespace DrRobot.JaguarControl
                 v23 = 0;
                 v31 = 0;
                 v32 = 0;
-                v33 = 0;
+                v33 = 1;
             }
 
             public static Matrix Transpose(Matrix M1)
@@ -334,6 +336,7 @@ namespace DrRobot.JaguarControl
             trajList[0] = new Node(0, 0, 0, 0);
             trajSize = 0;
 
+            weShouldReSample = false;
 
             // KF stuff
             x_kf = x_est;
@@ -393,8 +396,14 @@ namespace DrRobot.JaguarControl
                 // Update the global state of the robot - x,y,t (lab 2)
                 LocalizeRealWithOdometry();
 
+                weShouldReSample = ((wheelDistanceL != 0) || (wheelDistanceR != 0)) && newLaserData;
+                newLaserData = false; // reset newLaserData
+
                 // Estimate the global state of the robot -x_est, y_est, t_est (lab 4)
                 LocalizeEstWithParticleFilter();
+
+                // Estimate the global state of the robot with a kalman filter - x,y,t_kalman
+                LocalizeRealWithKalmanFilter();
 
 
                 // If using the point tracker, call the function
@@ -909,8 +918,8 @@ namespace DrRobot.JaguarControl
                 
                 // Determine random control inputs
                 // compute distance travelled in timestep
-  			    randDistanceR = randGenerator.NextDouble()*5;
-            	randDistanceL = randGenerator.NextDouble()*5;
+  			    double randDistanceR = randGenerator.NextDouble()*5;
+            	double randDistanceL = randGenerator.NextDouble()*5;
 
             	// Distance and orientation to expanded noode
            		double randDist = (randDistanceR + randDistanceL) / 2;
@@ -1229,44 +1238,52 @@ namespace DrRobot.JaguarControl
             // -- Prediction
             
             // propagate x_t = f(x_t-1, u_t)
-            double x_prime = x; // using LocalizeRealWithOdometry for now
-            double y_prime = y;
-            double t_prime = t;
+            double[] propegatedEstimates = KalmanOdometryUpdate();
+
+            double x_prime = propegatedEstimates[0];
+            double y_prime = propegatedEstimates[1];
+            double t_prime = propegatedEstimates[2];
+
             // get Fx, Fu
-            Matrix Fx = getFx();
-            Matrix Fu = getFu();
+            Matrix Fx = getFx(x_prime, y_prime, t_prime);
+            Matrix Fu = getFu(x_prime, y_prime, t_prime);
 
             // propegate P 
-            Matrix Q = new Matrix(1, 0, 0, 0, 1, 0, 0, 0, 0); // TODO
+            double k = 1; // TODO Tune this Sigma
+            Matrix Q = new Matrix(k*wheelDistanceR, 0, 0, 0, k*wheelDistanceL, 0, 0, 0, 0);
             Matrix P_t_prime_A = Matrix.MxMultiply(Fx, Matrix.MxMultiply(P_t, Matrix.Transpose(Fx)));
             Matrix P_t_prime_B = Matrix.MxMultiply(Fu, Matrix.MxMultiply(Q, Matrix.Transpose(Fu)));
             Matrix P_t_prime = Matrix.MxAdd(P_t_prime_A, P_t_prime_B);
 
             // -- Correction
 
-            int numArcs = 5; // could be more.. just using 5 evenly spaced arcs around the laserRange
-            for (int i = 0; i <= numArcs; i++) // innovate for each sensor measurement one at a time
+            if (weShouldReSample)
             {
-                // get z, zexpected, v
-                double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i, numArcs);
-                double z_i = getZi(i, numArcs);
-                double v = z_i - z_i_exp;
 
-                // get H_i
-                Matrix H_i = getHi(x_prime, y_prime, t_prime, i, numArcs);
-                double R_i = getRi(z_i);
-                Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
-                double SigmaIN = SigmaIN_Mx.v11 + R_i;
-                Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
-                    0, 1 / SigmaIN, 0,
-                    0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
-                Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
-                // update x_t, P_t
-                x_prime = x_prime - K_t.v11 * v;
-                y_prime = y_prime - K_t.v21 * v;
-                t_prime = t_prime - K_t.v31 * v;
+                int numArcs = 5; // could be more.. just using 5 evenly spaced arcs around the laserRange
+                for (int i = 0; i < numArcs; i++) // innovate for each sensor measurement one at a time
+                {
+                    // get z, zexpected, v
+                    double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i, numArcs);
+                    double z_i = getZi(i, numArcs);
+                    double v = z_i - z_i_exp;
 
-                P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+                    // get H_i
+                    Matrix H_i = getHi(x_prime, y_prime, t_prime, i, numArcs);
+                    double R_i = getRi(z_i);
+                    Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
+                    double SigmaIN = SigmaIN_Mx.v11 + R_i;
+                    Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
+                        0, 1 / SigmaIN, 0,
+                        0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
+                    Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
+                    // update x_t, P_t
+                    x_prime = x_prime - K_t.v11 * v;
+                    y_prime = y_prime - K_t.v21 * v;
+                    t_prime = t_prime - K_t.v31 * v;
+
+                    P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+                }
             }
             x_kf = x_prime;
             y_kf = y_prime;
@@ -1274,14 +1291,66 @@ namespace DrRobot.JaguarControl
 
         }
 
-        public Matrix getFx() // you may need some arguments
+        public double[] KalmanOdometryUpdate()
         {
-            return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya
+            // compute angle and distance travelled
+            double distanceTravelled = (wheelDistanceR + wheelDistanceL) / 2;
+            double angleTravelled = (wheelDistanceR - wheelDistanceL) / (2 * robotRadius); //check robot radius
+
+            // Update the actual
+            double x_out = x_kf + distanceTravelled * Math.Cos(t_kf + angleTravelled / 2);
+            double y_out = y_kf + distanceTravelled * Math.Sin(t_kf + angleTravelled / 2);
+            double t_out = t_kf + angleTravelled;
+            if (t_out > Math.PI)
+                t_out = t_out - 2 * Math.PI;
+            else if (t_out < -Math.PI)
+                t_out = t_out + 2 * Math.PI;
+
+            double [] output = {x_out, y_out, t_out};
+            return output;
         }
 
-        public Matrix getFu() // you may need some arguments
+        public Matrix getFx(double x_prime, double y_prime, double t_prime) // you may need some arguments
         {
-            return new Matrix(0, 0, 0, 0, 0, 0, 0, 0, 0); // TODO Aishvarya 
+            // compute angle and distance travelled
+            double distanceTravelled = (wheelDistanceR + wheelDistanceL) / 2;
+            double angleTravelled = (wheelDistanceR - wheelDistanceL) / (2 * robotRadius); //check robot radius
+
+            double dxdx = 1;
+            double dxdy = 0;
+            double dxdt = -distanceTravelled * Math.Sin(t_prime + angleTravelled / 2);
+
+            double dydx = 0;
+            double dydy = 1;
+            double dydt = distanceTravelled * Math.Cos(t_prime + angleTravelled / 2);
+
+            double dtdx = 0;
+            double dtdy = 0;
+            double dtdt = 1;
+
+            return new Matrix(dxdx, dxdy, dxdt, dydx, dydy, dydt, dtdx, dtdy, dtdt);
+        }
+
+        public Matrix getFu(double x_prime, double y_prime, double t_prime)
+        {
+            // compute angle and distance travelled
+            double distanceTravelled = (wheelDistanceR + wheelDistanceL) / 2;
+            double angleTravelled = (wheelDistanceR - wheelDistanceL) / (2 * robotRadius); //check robot radius
+
+            double df1dsr = 0.5 * Math.Cos(t_prime + angleTravelled / 2) 
+                + distanceTravelled * (-1 / (2 * robotRadius)) * Math.Sin(t_prime + angleTravelled / 2);
+            double df1dsl = 0.5 * Math.Cos(t_prime + angleTravelled / 2)
+                + distanceTravelled * (1 / (2 * robotRadius)) * Math.Sin(t_prime + angleTravelled / 2);
+
+            double df2dsr = 1 / 2 * Math.Sin(t_prime + angleTravelled / 2)
+                + (1 / (2 * robotRadius)) * distanceTravelled * Math.Cos(t_prime + angleTravelled / 2);
+            double df2dsl = 1 / 2 * Math.Sin(t_prime + angleTravelled / 2)
+                + (-1 / (2 * robotRadius)) * distanceTravelled * Math.Cos(t_prime + angleTravelled / 2);
+
+            double df3dsr = (1 / robotRadius);
+            double df3dsl = (-1 / robotRadius);
+            
+            return new Matrix(df1dsr, df1dsl, 0, df2dsr, df2dsl, 0, df3dsr, df3dsl, 0);
             // Make the 3x2 a 3x3 by padding with 0s.
         }
 
@@ -1304,7 +1373,25 @@ namespace DrRobot.JaguarControl
 
         public Matrix getHi(double x, double y, double t, int i, int numArcs) // TODO Aishvarya (May want to use getZiexp)
         {
-            return new Matrix(1, 0, 0, 0, 1, 0, 0, 0, 1);
+            // compute dz/dx
+            double dx = 0.1;
+            double z2x = getZiexp(x + dx, y, t, i, numArcs);
+            double z1x = getZiexp(x - dx, y, t, i, numArcs);
+            double dzdx = (z2x - z1x) / (2 * dx);
+
+            // compute dz/dx
+            double dy = 0.1;
+            double z2y = getZiexp(x, y + dy, t, i, numArcs);
+            double z1y = getZiexp(x, y - dy, t, i, numArcs);
+            double dzdy = (z2y - z1y) / (2 * dy);
+
+            // compute dz/dt
+            double dt = 0.1;
+            double z2t = getZiexp(x, y, t + dt, i, numArcs);
+            double z1t = getZiexp(x, y, t - dt, i, numArcs);
+            double dzdt = (z2t - z1t) / (2 * dt);
+
+            return new Matrix(dzdx, dzdy, dzdt, 0, 0, 0, 0, 0, 0);
         }
 
         public double getRi(double sensor_measurement)
@@ -1327,8 +1414,7 @@ namespace DrRobot.JaguarControl
             // ****************** Additional Student Code: Start ************
 
             // Put code here to calculate x_est, y_est, t_est using a PF
-            bool weShouldReSample = ((wheelDistanceL != 0) || (wheelDistanceR != 0)) && newLaserData;
-            newLaserData = false; // reset newLaserData
+            // moved WeShouldReSample up to main control loop
 
             // propogate particles using odomotery
             for (int i = 0; i < numParticles; i++)
