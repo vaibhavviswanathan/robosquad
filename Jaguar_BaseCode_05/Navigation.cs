@@ -949,6 +949,9 @@ namespace DrRobot.JaguarControl
             // Create the trajectory to follow
             BuildTraj(goalNode);
 
+            // Optimize Trajectory
+            optimizeTraj(goalNode, nodeList);
+
             
             // ****************** Additional Student Code: End   ************
 
@@ -1038,28 +1041,34 @@ namespace DrRobot.JaguarControl
 
             //OptimizeTrajBrute();
 
-            return;
+           // return;
         }
 
 
         // Optimizes the trajectory starting from the end point
-        void optimizeTraj(Node[] tempTrajList)    //TODO
+        void optimizeTraj(Node goalNode, Node[] tempNodeList)    //TODO
         {
             // optimize the trajectory of temp list
-            Node currentNode = tempTrajList[tempTrajList.Length - 1];
-            Node parent = tempTrajList[currentNode.lastNode];
-            Node grandparent = tempTrajList[parent.lastNode];
+            Node currentNode = goalNode;
+            
 
             // better path
-            while(currentNode.nodeIndex > 1)
+            while(currentNode.nodeIndex > 0 && currentNode.lastNode>0)
             {
-                if(!map.CollisionFound(grandparent, currentNode, robotRadius)) {
-                    currentNode.lastNode = grandparent.nodeIndex;
-                    tempTrajList[currentNode.nodeIndex] = currentNode;
-                }
-            }
+                Node parent = tempNodeList[currentNode.lastNode];
+                Node grandparent = tempNodeList[parent.lastNode];
 
-            trajList = tempTrajList;
+                if (!map.CollisionFound(grandparent, currentNode, robotRadius)) {
+                    currentNode.lastNode = grandparent.nodeIndex;
+                }
+                else
+                {
+                    currentNode = parent;
+                }
+
+            }
+            nodeList = tempNodeList;
+            BuildTraj(tempNodeList[tempNodeList.Length - 1]);
 
         }
 
