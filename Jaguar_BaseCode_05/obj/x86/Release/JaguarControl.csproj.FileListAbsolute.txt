@@ -51,3 +51,28 @@ C:\Users\Root\Desktop\Jaguar_Soln_05\obj\x86\Release\ResGen.write.1.tlog
 \\Mac\Google Drive\2016 Spring\E160\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.csproj.ResolveComReference.cache
 \\Mac\Google Drive\2016 Spring\E160\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.exe
 \\Mac\Google Drive\2016 Spring\E160\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.pdb
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\Interop.AXISMEDIACONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\Interop.DRROBOTSentinelCONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\Interop.EARTHLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\AxInterop.AXISMEDIACONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\AxInterop.DRROBOTSentinelCONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.csproj.ResolveComReference.cache
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.exe
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.pdb
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.csprojResolveAssemblyReference.cache
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\DrRobot.JaguarControl.DrRobotRobotConnection.resources
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\DrRobot.JaguarControl.JaguarCtrl.resources
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\DrRobot.JaguarControl.JaguarCtrlResource.resources
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\DrRobot.JaguarControl.Properties.Resources.resources
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\obj\x86\Release\JaguarControl.csproj.GenerateResource.Cache
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\JaguarControl.exe
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\JaguarControl.pdb
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Microsoft.DirectX.DirectInput.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Microsoft.DirectX.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Microsoft.DirectX.xml
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Microsoft.DirectX.DirectInput.xml
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Interop.AXISMEDIACONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Interop.DRROBOTSentinelCONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\Interop.EARTHLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\AxInterop.AXISMEDIACONTROLLib.dll
+C:\Users\Vaibhav\Documents\GitHub\robosquad\Jaguar_BaseCode_05\bin\x86\Release\AxInterop.DRROBOTSentinelCONTROLLib.dll

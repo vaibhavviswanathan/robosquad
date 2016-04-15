@@ -896,9 +896,6 @@ namespace DrRobot.JaguarControl
             int iterations = 0;
             Random randGenerator = new Random();
 
-
-            
-
             while (iterations < maxIterations && !pathFound)
             {
                 int randCellNumber = randGenerator.Next(0, numOccupiedCells);
@@ -906,20 +903,21 @@ namespace DrRobot.JaguarControl
 
                 Node randExpansionNode = NodesInCells[occupiedCellsList[randCellNumber], randNodeNumber];
                 
-                
+                /*
                 // Determine random control inputs
                 // compute distance travelled in timestep
-  			    randDistanceR = randGenerator.NextDouble()*5;
-            	randDistanceL = randGenerator.NextDouble()*5;
+  			    double randDistanceR = randGenerator.NextDouble()*5;
+            	double randDistanceL = randGenerator.NextDouble()*5;
 
             	// Distance and orientation to expanded noode
            		double randDist = (randDistanceR + randDistanceL) / 2;
             	double randOrientation = (randDistanceR - randDistanceL) / (2 * robotRadius);
-/*
+*/
+
                 // Compute distance for expanded node
                 double randDist = 5.0*randGenerator.NextDouble();
                 double randOrientation = -Math.PI + 2*Math.PI * randGenerator.NextDouble();
-*/
+
                 // Determine x and y position of expanded node
                 double newX = randExpansionNode.x + randDist * Math.Cos(randOrientation);
                 double newY = randExpansionNode.y + randDist * Math.Sin(randOrientation);
@@ -1024,7 +1022,6 @@ namespace DrRobot.JaguarControl
                 tempList[i] = nodeList[tempList[i - 1].lastNode];
                 i++;
             }
-
             // Reverse trajectory order
             for (int j = 0; j < i; j++)
             {
@@ -1035,11 +1032,40 @@ namespace DrRobot.JaguarControl
             trajSize = i;
             trajCurrentNode = 0;
 
+
+            // Optimize trajectory TODO move outside this loop
+
+
             //OptimizeTrajBrute();
 
             return;
         }
 
+
+        // Optimizes the trajectory starting from the end point
+        void optimizeTraj(Node[] tempTrajList)    //TODO
+        {
+            // optimize the trajectory of temp list
+            Node currentNode = tempTrajList[tempTrajList.Length - 1];
+            Node parent = tempTrajList[currentNode.lastNode];
+            Node grandparent = tempTrajList[parent.lastNode];
+
+            // better path
+            while(currentNode.nodeIndex > 1)
+            {
+                if(!map.CollisionFound(grandparent, currentNode, robotRadius)) {
+                    currentNode.lastNode = grandparent.nodeIndex;
+                    tempTrajList[currentNode.nodeIndex] = currentNode;
+                }
+            }
+
+            trajList = tempTrajList;
+
+        }
+
+       
+
+        // Optimizes the trajectory using all the nodes
         void OptimizeTrajBrute(){
             Tuple<double, int[]> optTrajBruteAuxOut = OptimizeTrajBruteAux(0, new int[0]);
             int [] trajListInts = optTrajBruteAuxOut.Item2;
