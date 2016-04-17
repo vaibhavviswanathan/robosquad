@@ -59,6 +59,8 @@ namespace DrRobot.JaguarControl
         double time = 0;
         DateTime startTime;
 
+        public double safeRadius = 0.3; //initial safe radius
+
         // TODO MAKE THESE ACTUAL VALUES
         double std_l = 1.2;
         double std_r = 1.2;
@@ -924,7 +926,7 @@ namespace DrRobot.JaguarControl
 */
 
                 // Compute distance for expanded node
-                double randDist = 5.0*randGenerator.NextDouble();
+                double randDist = 2.0*randGenerator.NextDouble();
                 double randOrientation = -Math.PI + 2*Math.PI * randGenerator.NextDouble();
 
                 // Determine x and y position of expanded node
@@ -934,12 +936,12 @@ namespace DrRobot.JaguarControl
                 Node newNode = new Node(newX, newY, numNodes, randExpansionNode.nodeIndex);
 
                 // Check for collisions
-                if (!map.CollisionFound(randExpansionNode, newNode, robotRadius))
+                if (!map.CollisionFound(randExpansionNode, newNode, safeRadius))
                 {
                     AddNode(newNode); //TODO create tolerance
 
                     // Check connection to goal
-                    if (!map.CollisionFound(newNode, goalNode, robotRadius))
+                    if (!map.CollisionFound(newNode, goalNode, safeRadius))
                     {
                         goalNode.nodeIndex = numNodes;
                         goalNode.lastNode = newNode.nodeIndex;
@@ -956,10 +958,10 @@ namespace DrRobot.JaguarControl
 
 
             // Create the trajectory to follow
-            BuildTraj(goalNode);
+            //BuildTraj(goalNode);
 
             // Optimize Trajectory
-            optimizeTraj(goalNode, nodeList);
+            optimizeTraj(goalNode);
 
             
             // ****************** Additional Student Code: End   ************
@@ -1045,39 +1047,56 @@ namespace DrRobot.JaguarControl
             trajCurrentNode = 0;
 
 
-            // Optimize trajectory TODO move outside this loop
-
-
-            //OptimizeTrajBrute();
-
-           // return;
+           return;
         }
 
 
         // Optimizes the trajectory starting from the end point
-        void optimizeTraj(Node goalNode, Node[] tempNodeList)    //TODO
+        void optimizeTraj(Node goalNode)    //TODO
         {
-            // optimize the trajectory of temp list
-            Node currentNode = goalNode;
-            
+            Node[] tempList = new Node[maxNumNodes];
+            for (int j = 0; j < maxNumNodes; j++)
+                trajList[j] = new Node(0, 0, 0, 0);
 
-            // better path
-            while(currentNode.nodeIndex > 0 && currentNode.lastNode>0)
+            tempList[0] = goalNode;
+            int i = 1;
+
+            // Make backwards traj by looking at parent of every child node
+            while (tempList[i - 1].nodeIndex != 0)
             {
-                Node parent = tempNodeList[currentNode.lastNode];
-                Node grandparent = tempNodeList[parent.lastNode];
+                //tempList[i] = nodeList[tempList[i - 1].lastNode];
+                Node newParent;
+                Node currentNode = tempList[i - 1];
+                Node parent = nodeList[currentNode.lastNode];
 
-                if (!map.CollisionFound(grandparent, currentNode, robotRadius)) {
-                    currentNode.lastNode = grandparent.nodeIndex;
-                }
-                else
+                while (parent.nodeIndex != 0)
                 {
-                    currentNode = parent;
+                    Node grandparent = nodeList[parent.lastNode];
+                    if (!map.CollisionFound(currentNode, grandparent, 0)) //TOD change to real value
+                    {
+                        parent = grandparent;
+                        Console.WriteLine("No collision");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Collision found");
+                        break;
+                    }
                 }
 
+                currentNode.lastNode = parent.nodeIndex;
+                tempList[i] = nodeList[currentNode.lastNode];
+                i++;
             }
-            nodeList = tempNodeList;
-            BuildTraj(tempNodeList[tempNodeList.Length - 1]);
+            // Reverse trajectory order
+            for (int j = 0; j < i; j++)
+            {
+                trajList[j] = tempList[i - j - 1];
+            }
+
+            // Set size of trajectory and initialize node counter
+            trajSize = i;
+            trajCurrentNode = 0;
 
         }
 
@@ -1119,7 +1138,7 @@ namespace DrRobot.JaguarControl
             Node nextNode;
             int[] trajNodesFinal;
             // see if you can go straight to goal
-            if (!map.CollisionFound(trajList[trajNode], trajList[trajSize-1], robotRadius))
+            if (!map.CollisionFound(trajList[trajNode], trajList[trajSize-1], safeRadius))
             {
                 nextNode = trajList[trajSize-1];
                 // calculate squared distance to goal
@@ -1153,7 +1172,7 @@ namespace DrRobot.JaguarControl
                 }
                 if (letsContinue) continue;
                 nextNode = trajList[i];
-                if(map.CollisionFound(trajList[trajNode], trajList[trajSize-1], robotRadius)) continue;
+                if(map.CollisionFound(trajList[trajNode], trajList[trajSize-1], safeRadius)) continue;
                 // else compare i's dist to minDist
                 Tuple<double, int[]> trialNodeOutput = OptimizeTrajBruteAux(i, trajNodeParentsNew);
                 double dist = trialNodeOutput.Item1;
