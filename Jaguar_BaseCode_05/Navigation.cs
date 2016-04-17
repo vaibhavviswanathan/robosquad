@@ -107,13 +107,13 @@ namespace DrRobot.JaguarControl
         }
 
         // Motion Planner Variables
-        const int numXCells = 20;
-        const int numYCells = 20;
+        const int numXCells = 50;
+        const int numYCells = 50;
         const int maxNumNodes = 5000;
-        const float minWorkspaceX = -10.0f;
-        const float maxWorkspaceX = 10.0f;
-        const float minWorkspaceY = -10.0f;
-        const float maxWorkspaceY = 10.0f;
+        const float minWorkspaceX = -50.0f;
+        const float maxWorkspaceX = 50.0f;
+        const float minWorkspaceY = -50.0f;
+        const float maxWorkspaceY = 50.0f;
 
         // Motion Planner Variables 
         public double samplingCellSizeX, samplingCellSizeY;
@@ -285,23 +285,27 @@ namespace DrRobot.JaguarControl
         public void Initialize()
         {
             // Initialize state estimates
-            x = 0;//initialX;
-            y = 0;//initialY;
+            x = -3.5;//initialX;
+            y = 17.25;//initialY;
             t = 0;//initialT;
 
             // Initialize state estimates
-            x_est = 0;//initialX;
-            y_est = 0;//initialY;
-            t_est = 0;//initialT;
+            x_est = x;//initialX;
+            y_est = y;//initialY;
+            t_est = t;//initialT;
+
+            initialX = x;
+            initialY = y;
+            initialT = t;
 
             x_est_var = 0;
             y_est_var = 0;
             xy_est_covar = 0;
 
             // Set desired state
-            desiredX = 0;// initialX;
-            desiredY = 0;// initialY;
-            desiredT = 0;// initialT;
+            desiredX = x;// initialX;
+            desiredY = y;// initialY;
+            desiredT = t;// initialT;
 
             // Reset Localization Variables
             wheelDistanceR = 0;
@@ -405,7 +409,7 @@ namespace DrRobot.JaguarControl
                 LocalizeEstWithParticleFilter();
 
                 // Estimate the global state of the robot with a kalman filter - x,y,t_kalman
-                LocalizeRealWithKalmanFilter();
+                //LocalizeRealWithKalmanFilter();
 
 
                 // If using the point tracker, call the function
@@ -1559,13 +1563,18 @@ namespace DrRobot.JaguarControl
             }
 
             // average all particle states
-            x_est = 0; y_est = 0; t_est = 0;
+            double x_est_tmp = 0; double y_est_tmp = 0; double t_est_tmp = 0;
             for (int i = 0; i < numParticles; i++)
             {
-                x_est += particles[i].x / numParticles;
-                y_est += particles[i].y / numParticles;
-                t_est += particles[i].t / numParticles;
+                x_est_tmp += particles[i].x / numParticles;
+                y_est_tmp += particles[i].y / numParticles;
+                t_est_tmp += particles[i].t / numParticles;
             }
+
+            x_est = x_est_tmp;
+            y_est = y_est_tmp;
+            t_est = t_est_tmp;
+
 
             x_est_var = 0; y_est_var = 0; xy_est_covar = 0;
             for (int i = 0; i < numParticles; i++)

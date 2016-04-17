@@ -14,10 +14,10 @@ namespace DrRobot.JaguarControl
         private double[] segmentSizes;
         private double[] intercepts;
 
-        private double minWorkspaceX = -10;
-        private double maxWorkspaceX =  10;
-        private double minWorkspaceY = -10;
-        private double maxWorkspaceY =  10;
+        private double minWorkspaceX = -50;
+        private double maxWorkspaceX =  50;
+        private double minWorkspaceY = -50;
+        private double maxWorkspaceY =  50;
 
         public Map()
         {
@@ -364,8 +364,11 @@ mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
 	        // These will be useful in your future coding.
 	        minX = 9999; minY = 9999; maxX=-9999; maxY=-9999;
 	        for (int i=0; i< numMapSegments; i++){
-		
-		        // Set extreme values
+                // Offset map
+                mapSegmentCorners[i, 0, 1] += 16;
+                mapSegmentCorners[i, 1, 1] += 16;
+
+                // Set extreme values
                 minX = Math.Min(minX, Math.Min(mapSegmentCorners[i,0,0], mapSegmentCorners[i,1,0]));
                 minY = Math.Min(minY, Math.Min(mapSegmentCorners[i,0,1], mapSegmentCorners[i,1,1]));
                 maxX = Math.Max(maxX, Math.Max(mapSegmentCorners[i,0,0], mapSegmentCorners[i,1,0]));
