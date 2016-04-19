@@ -49,10 +49,10 @@ namespace DrRobot.JaguarControl
         public double robotRadius = 0.242;//0.232
         private double angleTravelled, distanceTravelled;
         private double diffEncoderPulseL, diffEncoderPulseR;
-        private double maxVelocity = 0.25;
+        private double maxVelocity = 0.15;
         private double Kpho = 1;
-        private double Kalpha = 8;//8
-        private double Kbeta = -0.5;//-0.5//-1.0;
+        private double Kalpha = 4;//8
+        private double Kbeta = -2;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
         const double phoTrackingAccuracy = 0.10;
@@ -605,11 +605,9 @@ namespace DrRobot.JaguarControl
             // suggested.
 
 
-            double Kp_PWM, Ki_PWM, Kd_PWM;
-            Kp_PWM = 12; // 8; //  2.25 * 16;
-            Ki_PWM = 2; // 10 * 2;
-            Kd_PWM = 0.1;
-            double N = 30; // filter coefficient
+            double Kp_PWM, Ki_PWM;
+            Kp_PWM = 6; // 8; //  2.25 * 16;
+            Ki_PWM = 0; // 10 * 2;
 
             DateTime currentTime = DateTime.Now;
             double MTSL = (currentTime - previousTimeL).TotalMilliseconds / 1000;
@@ -628,15 +626,11 @@ namespace DrRobot.JaguarControl
             }
             double errorL = desiredRotRateL - rotRateLest;
             errorLInt += (wheelDistanceL != 0 || MTSL > 0.5) ? errorL * measured_timestepL : 0;
-            double DerrorL = (wheelDistanceL != 0 || MTSL > 0.5) ? N * (errorL - wprevL) : 0;
-            wprevL += (wheelDistanceL != 0 || MTSL > 0.5) ? DerrorL * measured_timestepL : 0;
-            signalL = Kp_PWM * errorL + Ki_PWM * errorLInt + Kd_PWM * DerrorL;
+            signalL = Kp_PWM * errorL + Ki_PWM * errorLInt;
 
             double errorR = desiredRotRateR - rotRateRest;
             errorRInt += (wheelDistanceR != 0 || MTSR > 0.5) ? errorR * measured_timestepR : 0;
-            double DerrorR = (wheelDistanceR != 0 || MTSR > 0.5) ? N * (errorR - wprevR) : 0;
-            wprevR += (wheelDistanceR != 0 || MTSR > 0.5) ? DerrorR * measured_timestepR : 0;
-            signalR = Kp_PWM * errorR + Ki_PWM * errorRInt + Kd_PWM * DerrorR;
+            signalR = Kp_PWM * errorR + Ki_PWM * errorRInt;
 
 
             // The following settings are used to help develop the controller in simulation.
@@ -793,11 +787,12 @@ namespace DrRobot.JaguarControl
                 within_tracking = true;
 
             }
+            /*
             if (within_tracking && desiredX == desiredX_prev && desiredY == desiredY_prev && desiredT == desiredT_prev)
             {
                 beta = -t + desiredT;
                 beta = (beta < -Math.PI) ? beta + 2 * Math.PI : ((beta > Math.PI) ? beta - 2 * Math.PI : beta);
-                double KbetaNew = -6 * Kbeta;
+                double KbetaNew = 2 * -Kbeta;
                 desiredW = KbetaNew * beta;
                 desiredV = 0;
             }
@@ -805,7 +800,7 @@ namespace DrRobot.JaguarControl
             {
                 within_tracking = false;
             }
-
+            */
 
             // saturate desired velocity
             // double saturatedV1 = Math.Sign(desiredV) * Math.Min(Math.Abs(desiredV), 0.25);
