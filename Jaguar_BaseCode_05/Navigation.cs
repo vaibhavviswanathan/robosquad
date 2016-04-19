@@ -59,7 +59,7 @@ namespace DrRobot.JaguarControl
         double time = 0;
         DateTime startTime;
 
-        public double safeRadius = 0.3; //initial safe radius
+        public double safeRadius = 0.5; //initial safe radius
 
         // TODO MAKE THESE ACTUAL VALUES
         double std_l = 1.2;
@@ -153,7 +153,7 @@ namespace DrRobot.JaguarControl
 
         
         // Preliminary round milestones
-        public double[,] milestones = new double[,] { {-4,-2, 15, 19},{ -1, 1, 13.5, 14.5 }, { 1, 3, 3, 5 }, { 3, 5, -4, -2 }, { -1, 1, -6, -4 } };
+        public double[,] milestones = new double[,] { {-4,-2, 15, 19},{ -1, 1, 13.5, 14.5 }, { 1, 3, 3, 5 }, { 3, 5, -4, -2 }, { -1, 1, -5, -3 } };
         public int milestoneNum = 0;
 
         public class Node
@@ -420,6 +420,7 @@ namespace DrRobot.JaguarControl
                 // If using the point tracker, call the function
                 if (jaguarControl.controlMode == jaguarControl.AUTONOMOUS)
                 {
+                    FollowMilestones();
 
                     // Check if we need to create a new trajectory
                     if (motionPlanRequired)
@@ -934,11 +935,11 @@ namespace DrRobot.JaguarControl
            // follows a set of given milestones	
            private void FollowMilestones()
            {
-           		if(milestoneNum == milestones.Length){
+           		if(milestoneNum == milestones.Length-1){
            			motionPlanRequired = false;
            			Console.WriteLine("done");
            		}
-           		else if(x_est > milestones[milestoneNum, 0] && x_est < milestones[milestoneNum, 1] && y_est > milestones[milestoneNum, 2] && y_est > milestones[milestoneNum, 3]){
+           		else if(x_est > milestones[milestoneNum, 0] && x_est < milestones[milestoneNum, 1] && y_est > milestones[milestoneNum, 2] && y_est < milestones[milestoneNum, 3]){
            			milestoneNum ++;
            			desiredX = 0.5* (milestones[milestoneNum, 0] + milestones[milestoneNum, 1]);
            			desiredY = 0.5* (milestones[milestoneNum, 2] + milestones[milestoneNum, 3]);
