@@ -405,6 +405,12 @@ namespace DrRobot.JaguarControl
                 // Estimate the global state of the robot with a kalman filter - x,y,t_kalman
                 LocalizeRealWithKalmanFilter();
 
+                /*
+                x_est = x_kf;
+                y_est = y_kf;
+                t_est = t_kf; // remove this!!
+                */
+
 
                 // If using the point tracker, call the function
                 if (jaguarControl.controlMode == jaguarControl.AUTONOMOUS)
@@ -702,7 +708,9 @@ namespace DrRobot.JaguarControl
             {
                 TimeSpan ts = DateTime.Now - startTime;
                 time = ts.TotalSeconds;
-                 String newData = time.ToString() + " " + x.ToString() + " " + y.ToString() + " " + t.ToString() ;
+                String newData = time.ToString() + " " + x.ToString() + " " + y.ToString() + " " + t.ToString()
+                    + " " + x_kf.ToString() + " " + y_kf.ToString() + " " + t_kf.ToString()
+                    + " " + P_t.v11.ToString() + " " + P_t.v22.ToString();
 
                 logFile.WriteLine(newData);
             }
@@ -1295,7 +1303,7 @@ namespace DrRobot.JaguarControl
             if (weShouldReSample)
             {
 
-                int numArcs = 5; // could be more.. just using 5 evenly spaced arcs around the laserRange
+                int numArcs = 10; // could be more.. just using 5 evenly spaced arcs around the laserRange
                 for (int i = 0; i < numArcs; i++) // innovate for each sensor measurement one at a time
                 {
                     // get z, zexpected, v
@@ -1319,6 +1327,10 @@ namespace DrRobot.JaguarControl
 
                     P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
                 }
+            }
+            else
+            {
+                P_t = P_t_prime;
             }
             x_kf = x_prime;
             y_kf = y_prime;
@@ -1395,7 +1407,7 @@ namespace DrRobot.JaguarControl
             double laserangle = laserAngles[laseriter];
             double offset = -Math.PI / 2 + laserangle;
             double dist = map.GetClosestWallDistance(x, y, t + offset);
-            return dist / 1000; // in meters
+            return dist; // in meters
         }
 
         public double getZi(int i, int numArcs)
@@ -1431,6 +1443,9 @@ namespace DrRobot.JaguarControl
 
         public double getRi(double sensor_measurement)
         {
+            if (sensor_measurement >= 6.0)
+                return 100000; // return a large number if measurement is bad
+            
             double sigma_laser_percent = 0.01; // ( 1%, from datasheet);
             double sigma_wall = 0.03; // cm
 
