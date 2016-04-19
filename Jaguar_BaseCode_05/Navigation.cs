@@ -343,9 +343,9 @@ namespace DrRobot.JaguarControl
             y_kf = y_est;
             t_kf = t_est;
 
-            P_t = new Matrix(1, 0, 0,
-                0, 1, 0,
-                0, 0, 1); // TODO MAKE THESE BETTER
+            P_t = new Matrix(0, 0, 0,
+                0, 0, 0,
+                0, 0, 0); // TODO MAKE THESE BETTER
 
         }
 
@@ -710,7 +710,7 @@ namespace DrRobot.JaguarControl
                 time = ts.TotalSeconds;
                 String newData = time.ToString() + " " + x.ToString() + " " + y.ToString() + " " + t.ToString()
                     + " " + x_kf.ToString() + " " + y_kf.ToString() + " " + t_kf.ToString()
-                    + " " + P_t.v11.ToString() + " " + P_t.v22.ToString();
+                    + " " + P_t.v11.ToString() + " " + P_t.v22.ToString() + " " + P_t.v12.ToString();
 
                 logFile.WriteLine(newData);
             }
@@ -1292,7 +1292,8 @@ namespace DrRobot.JaguarControl
             Matrix Fu = getFu(x_prime, y_prime, t_prime);
 
             // propegate P 
-            double k = 1; // TODO Tune this Sigma
+            double k = 0.01; // TODO Tune this Sigma
+            k = 0;
             Matrix Q = new Matrix(k*wheelDistanceR, 0, 0, 0, k*wheelDistanceL, 0, 0, 0, 0);
             Matrix P_t_prime_A = Matrix.MxMultiply(Fx, Matrix.MxMultiply(P_t, Matrix.Transpose(Fx)));
             Matrix P_t_prime_B = Matrix.MxMultiply(Fu, Matrix.MxMultiply(Q, Matrix.Transpose(Fu)));
@@ -1309,23 +1310,40 @@ namespace DrRobot.JaguarControl
                     // get z, zexpected, v
                     double z_i_exp = getZiexp(x_prime, y_prime, t_prime, i, numArcs);
                     double z_i = getZi(i, numArcs);
-                    double v = z_i - z_i_exp;
+                    if (!(z_i >= 6.0 || z_i_exp >= 6.0))
+                    {
 
-                    // get H_i
-                    Matrix H_i = getHi(x_prime, y_prime, t_prime, i, numArcs);
-                    double R_i = getRi(z_i);
-                    Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
-                    double SigmaIN = SigmaIN_Mx.v11 + R_i;
-                    Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
-                        0, 1 / SigmaIN, 0,
-                        0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
-                    Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
-                    // update x_t, P_t
-                    x_prime = x_prime - K_t.v11 * v;
-                    y_prime = y_prime - K_t.v21 * v;
-                    t_prime = t_prime - K_t.v31 * v;
+                        double v = z_i - z_i_exp;
 
-                    P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+                        // get H_i
+                        Matrix H_i = getHi(x_prime, y_prime, t_prime, i, numArcs);
+                        double R_i = getRi(z_i);
+
+                        R_i = 0;
+
+                        Matrix SigmaIN_Mx = Matrix.MxMultiply(H_i, Matrix.MxMultiply(P_t_prime, Matrix.Transpose(H_i)));
+                        double SigmaIN = SigmaIN_Mx.v11 + R_i;
+                        Matrix SigmaIN_Inverse = new Matrix(1 / SigmaIN, 0, 0,
+                            0, 1 / SigmaIN, 0,
+                            0, 0, 1 / SigmaIN); // Identity times 1/SigmaIN
+                        Matrix K_t = Matrix.MxMultiply(P_t_prime, Matrix.MxMultiply(Matrix.Transpose(H_i), SigmaIN_Inverse));
+                        // update x_t, P_t
+                        x_prime = x_prime - K_t.v11 * v;
+                        y_prime = y_prime - K_t.v21 * v;
+                        double t_prime_temp = K_t.v31 * v;
+                        if (t_prime_temp > Math.PI)
+                            t_prime_temp = t_prime_temp - 2 * Math.PI;
+                        else if (t_prime_temp < -Math.PI)
+                            t_prime_temp = t_prime_temp + 2 * Math.PI;
+
+                        t_prime = t_prime - t_prime_temp;
+                        if (t_prime > Math.PI)
+                            t_prime = t_prime - 2 * Math.PI;
+                        else if (t_prime_temp < -Math.PI)
+                            t_prime = t_prime + 2 * Math.PI;
+
+                        P_t = Matrix.MxAdd(P_t_prime, Matrix.MxScale(Matrix.MxMultiply(K_t, Matrix.Transpose(K_t)), -SigmaIN));
+                    }
                 }
             }
             else
@@ -1433,7 +1451,7 @@ namespace DrRobot.JaguarControl
             double dzdy = (z2y - z1y) / (2 * dy);
 
             // compute dz/dt
-            double dt = 0.1;
+            double dt = 0.01;
             double z2t = getZiexp(x, y, t + dt, i, numArcs);
             double z1t = getZiexp(x, y, t - dt, i, numArcs);
             double dzdt = (z2t - z1t) / (2 * dt);
@@ -1444,13 +1462,13 @@ namespace DrRobot.JaguarControl
         public double getRi(double sensor_measurement)
         {
             if (sensor_measurement >= 6.0)
-                return 100000; // return a large number if measurement is bad
+                return 4000000000; // return a large number if measurement is bad
             
             double sigma_laser_percent = 0.01; // ( 1%, from datasheet);
             double sigma_wall = 0.03; // cm
 
             double sigma_laser = Math.Max(0.01, sigma_laser_percent * sensor_measurement);
-            double sigma_squared = 5 * Math.Pow(sigma_laser, 2) + Math.Pow(sigma_wall, 2); // the 5 is an arbitrary increase to be conservative
+            double sigma_squared = Math.Pow(sigma_laser, 2) + Math.Pow(sigma_wall, 2); // the 5 is an arbitrary increase to be conservative
             return sigma_squared;
         }
 

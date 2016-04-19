@@ -407,7 +407,8 @@ mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
             bool validSeg = ((x_c >= Math.Min(x1, x2) - tol) && (x_c <= Math.Max(x1, x2) + tol)) && ((y_c >= Math.Min(y1, y2) - tol) && (y_c <= Math.Max(y1, y2) + tol));
 
             // check if in right heading of the robot
-            validSeg &= (Math.Sign(t) == Math.Sign(Math.Atan2(y_c - y, x_c - x)));
+            if(validSeg)
+                validSeg = (Math.Sign(t) == Math.Sign(Math.Atan2(y_c - y, x_c - x)));
 
             double wallDist = validSeg ? Math.Sqrt(Math.Pow((x_c - x), 2) + Math.Pow((y_c - y), 2)) : Double.PositiveInfinity;
 
