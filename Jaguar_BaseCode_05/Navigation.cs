@@ -859,7 +859,7 @@ namespace DrRobot.JaguarControl
         }
 
 
-
+/*
         // THis function is called to follow a trajectory constructed by PRMMotionPlanner()
         private void TrackTrajectory()
         {
@@ -874,7 +874,60 @@ namespace DrRobot.JaguarControl
 
             FlyToSetPoint();
         }
+*/
+         // THis function is called to follow a trajectory constructed by PRMMotionPlanner(), writting by Aishvarya and Mo
+        private void TrackTrajectory()
+        {
+            
+            int xLength = x_traj.Length - 1;
+            int yLength = y_traj.Length - 1; 
+            
+            double destX    = x_traj[xLength];
+            double destY    = y_traj[yLength];
+            double pho_dest = Math.Sqrt(Math.Pow(destX - x, 2) + Math.Pow(destY - y, 2));
 
+            //Console.WriteLine("k: " + k);
+            //Console.WriteLine();
+            if ((pho_dest > 0.1) || (k < 5))
+            {
+                desiredX = x_traj[k];
+                desiredY = y_traj[k];
+
+                if (k == 0)
+                {
+                    desiredT = Math.Atan2((y_traj[k + 1] - y_traj[k]), (x_traj[k + 1] - x_traj[k]));
+                }
+                else if (k == x_traj.Length)
+                {
+                    desiredT = Math.Atan2((y_traj[yLength] - y_traj[yLength - 1]), (x_traj[xLength] - x_traj[xLength - 1]));
+                }
+                else
+                {
+                    desiredT = Math.Atan2((y_traj[k] - y_traj[k - 1]), (x_traj[k] - x_traj[k - 1]));
+                }
+
+
+                double distToNextPoint = Math.Sqrt(Math.Pow(x_traj[k] - x, 2) + Math.Pow(y_traj[k] - y, 2));
+                //Console.WriteLine("distance to Next Pt: " + distToNextPoint);
+                Boolean close = (distToNextPoint < 0.4);
+                //Console.WriteLine("xnext :" + x_traj[k] + " ynext: " + y_traj[k] + " tnext: " + desiredT);
+
+                FlyToSetPoint();
+                //Console.WriteLine("k: " + k);
+
+                if (close)
+                {
+                    k = k + 1;
+                    Console.WriteLine("update?");
+                }
+
+
+                //k = k + 1 ;
+            }
+           
+
+
+        }
         // This function houses the core motion planner. This function
         // will generate a new trajectory when called. Students must 
         // add their code here.
