@@ -50,9 +50,9 @@ namespace DrRobot.JaguarControl
         private double angleTravelled, distanceTravelled;
         private double diffEncoderPulseL, diffEncoderPulseR;
         private double maxVelocity = 0.15;
-        private double Kpho = 1;
-        private double Kalpha = 4;//8
-        private double Kbeta = -2;//-0.5//-1.0;
+        private double Kpho = 12.2;
+        private double Kalpha = 19;//8
+        private double Kbeta = -4;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
         const double phoTrackingAccuracy = 0.10;
@@ -606,7 +606,7 @@ namespace DrRobot.JaguarControl
 
 
             double Kp_PWM, Ki_PWM;
-            Kp_PWM = 6; // 8; //  2.25 * 16;
+            Kp_PWM = 0; // 8; //  2.25 * 16;
             Ki_PWM = 0; // 10 * 2;
 
             DateTime currentTime = DateTime.Now;
@@ -635,8 +635,8 @@ namespace DrRobot.JaguarControl
 
             // The following settings are used to help develop the controller in simulation.
             // They will be replaced when the actual jaguar is used.
-            motorSignalL = (short)((zeroOutput + desiredRotRateL * 100 + signalL) / (1.8519 / 1.8519));// (zeroOutput + u_L);
-            motorSignalR = (short)((zeroOutput - desiredRotRateR * 100 - signalR) / (1.6317 / 1.8519));//(zeroOutput - u_R);
+            motorSignalL = (short)((zeroOutput + desiredRotRateL * 55 + signalL) / (1.8519 / 1.8519));// (zeroOutput + u_L);
+            motorSignalR = (short)((zeroOutput - desiredRotRateR * 80 - signalR) / (1.8519 / 1.8519));//(zeroOutput - u_R);
 
             // motorSignalL = (short) -desiredRotRateL;
             //motorSignalR = desiredRotRateR;
