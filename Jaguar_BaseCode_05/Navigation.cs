@@ -51,7 +51,7 @@ namespace DrRobot.JaguarControl
         private double diffEncoderPulseL, diffEncoderPulseR;
         private double maxVelocity = 0.25;
         private double Kpho = 1;
-        private double Kalpha = 2;//8
+        private double Kalpha = 8;//8
         private double Kbeta = -0.5;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
@@ -150,6 +150,11 @@ namespace DrRobot.JaguarControl
 
         // TrackTrajectory variables
         private int traj_i = 0;
+
+        
+        // Preliminary round milestones
+        public double[,] milestones = new double[,] { { -1, 1, 13.5, 14.5 }, { 1, 3, 3, 5 }, { 3, 5, -4, -2 }, { -1, 1, -6, -4 } };
+
 
         public class Node
         {
@@ -859,7 +864,7 @@ namespace DrRobot.JaguarControl
         }
 
 
-/*
+
         // THis function is called to follow a trajectory constructed by PRMMotionPlanner()
         private void TrackTrajectory()
         {
@@ -874,8 +879,8 @@ namespace DrRobot.JaguarControl
 
             FlyToSetPoint();
         }
-*/
-         // THis function is called to follow a trajectory constructed by PRMMotionPlanner(), writting by Aishvarya and Mo
+
+  /*       // THis function is called to follow a trajectory constructed by PRMMotionPlanner(), writting by Aishvarya and Mo
         private void TrackTrajectory()
         {
             
@@ -924,10 +929,9 @@ namespace DrRobot.JaguarControl
 
                 //k = k + 1 ;
             }
-           
+           }
+*/
 
-
-        }
         // This function houses the core motion planner. This function
         // will generate a new trajectory when called. Students must 
         // add their code here.
@@ -1129,7 +1133,7 @@ namespace DrRobot.JaguarControl
                 while (parent.nodeIndex != 0)
                 {
                     Node grandparent = nodeList[parent.lastNode];
-                    if (!map.CollisionFound(currentNode, grandparent, 0)) //TOD change to real value
+                    if (!map.CollisionFound(currentNode, grandparent, safeRadius)) //TOD change to real value
                     {
                         parent = grandparent;
                         Console.WriteLine("No collision");
