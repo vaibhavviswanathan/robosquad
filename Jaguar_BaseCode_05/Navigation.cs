@@ -60,10 +60,11 @@ namespace DrRobot.JaguarControl
         DateTime startTime;
 
         public double safeRadius = 0.5; //initial safe radius
+        public double laserLost = 0;
 
         // TODO MAKE THESE ACTUAL VALUES
-        double std_l = 1.2;
-        double std_r = 1.2;
+        double std_l = 0.3; //1.2
+        double std_r = 0.3; //1.2;
 
         public short K_P = 15;//15;
         public short K_I = 0;//0;
@@ -152,8 +153,8 @@ namespace DrRobot.JaguarControl
         private int traj_i = 0;
 
         
-        // Preliminary round milestones
-        public double[,] milestones = new double[,] { {-4,-2, 15, 19},{ -1, 1, 13.5, 14.5 }, { 1, 3, 3, 5 }, { 3, 5, -4, -2 }, { -1, 1, -5, -3 } };
+        // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
+        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0},{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { 3, 5, -4, -2, 0 }, { -1, 1, -5, -3, 0 } };
         public int milestoneNum = 0;
 
         public class Node
@@ -407,7 +408,7 @@ namespace DrRobot.JaguarControl
                 // Update the global state of the robot - x,y,t (lab 2)
                 LocalizeRealWithOdometry();
 
-                weShouldReSample = ((wheelDistanceL != 0) || (wheelDistanceR != 0)) && newLaserData;
+                weShouldReSample = ((wheelDistanceL != 0) || (wheelDistanceR != 0)) && newLaserData; //&& (laserLost < 5*LaserData.Length);
                 newLaserData = false; // reset newLaserData
 
                 // Estimate the global state of the robot -x_est, y_est, t_est (lab 4)
@@ -554,10 +555,12 @@ namespace DrRobot.JaguarControl
                 laserCounter = laserCounter + deltaT;
                 if (laserCounter >= 2000)
                 {
+                    laserLost = 0;
                     for (int i = 0; i < LaserData.Length; i=i+laserStepSize)
                     {
                         LaserData[i] = (long)(1000 * map.GetClosestWallDistance(x, y, t -1.57 + laserAngles[i]));
-                    }
+                        laserLost += LaserData[i]
+;                    }
                     laserCounter = 0;
                     newLaserData = true;
                 }
@@ -935,12 +938,33 @@ namespace DrRobot.JaguarControl
            			Console.WriteLine("done");
            		}
            		else if(x_est > milestones[milestoneNum, 0] && x_est < milestones[milestoneNum, 1] && y_est > milestones[milestoneNum, 2] && y_est < milestones[milestoneNum, 3]){
+                FlyToSetPoint(); // TODO MILESTONE
            			milestoneNum ++;
            			desiredX = 0.5* (milestones[milestoneNum, 0] + milestones[milestoneNum, 1]);
            			desiredY = 0.5* (milestones[milestoneNum, 2] + milestones[milestoneNum, 3]);
            			motionPlanRequired = true;
            		}
            }
+
+        // This function will implement anytime goal checking
+        private void anytime()
+        {
+            // Create and add the start Node
+            Node firstNode = new Node(x_est, y_est, 0, 0);
+            AddNode(firstNode);
+
+            // Create the goal node
+            Node goalNode = new Node(desiredX, desiredY, 0, 0);
+
+            // Check for collisions
+            if (!map.CollisionFound(firstNode, goalNode, safeRadius))
+            {
+                return;
+            }
+
+
+
+        }
 
 
         // This function houses the core motion planner. This function
@@ -1578,10 +1602,6 @@ namespace DrRobot.JaguarControl
 
             if (weShouldReSample)
             {
-
-
-
-
                 for (int i = 0; i < numParticles; i++)
                 {
                     CalculateWeight(i);
@@ -1622,7 +1642,7 @@ namespace DrRobot.JaguarControl
             }
             else
             {
-                for (int i = 0; i < numParticles; i++) // randomly sample from resampled
+                for (int i = 0; i < numParticles; i++) // don't resample
                 {
                     particles[i].x = propagatedParticles[i].x;
                     particles[i].y = propagatedParticles[i].y;
