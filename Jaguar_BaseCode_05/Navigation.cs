@@ -52,7 +52,7 @@ namespace DrRobot.JaguarControl
         private double maxVelocity = 0.15;
         private double Kpho = 12.2;
         private double Kalpha = 19;//8
-        private double Kbeta = -4;//-0.5//-1.0;
+        private double Kbeta = -8;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
         const double phoTrackingAccuracy = 0.10;
@@ -152,7 +152,12 @@ namespace DrRobot.JaguarControl
         // TrackTrajectory variables
         private int traj_i = 0;
 
-        
+
+        // smart laser scanning variables
+        public int usefulLaserSize;
+        public int[] usefulLaserData;
+
+
         // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
         public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0},{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { 3, 5, -4, -2, 0 }, { -1, 1, -5, -3, 0 } };
         public int milestoneNum = 0;
@@ -358,6 +363,10 @@ namespace DrRobot.JaguarControl
             P_t = new Matrix(1, 0, 0,
                 0, 1, 0,
                 0, 0, 1); // TODO MAKE THESE BETTER
+
+            // Useful laser data
+            usefulLaserSize = 1;
+            usefulLaserData = new int[LaserData.Length];
 
         }
 
@@ -585,6 +594,17 @@ namespace DrRobot.JaguarControl
                 {
                 }
             }
+
+            // smart laser data
+            usefulLaserSize = 0;
+            for (int i = 0; i<LaserData.Length; i++)
+            {
+                if (LaserData[i] < 6000)
+                {
+                    usefulLaserData[usefulLaserSize] = i;
+                    usefulLaserSize++;
+                }
+            }
         }
 
         // At every iteration of the control loop, this function calculates
@@ -638,8 +658,8 @@ namespace DrRobot.JaguarControl
 
             // The following settings are used to help develop the controller in simulation.
             // They will be replaced when the actual jaguar is used.
-            motorSignalL = (short)((zeroOutput + desiredRotRateL * 55 + signalL) / (1.8519 / 1.8519));// (zeroOutput + u_L);
-            motorSignalR = (short)((zeroOutput - desiredRotRateR * 80 - signalR) / (1.8519 / 1.8519));//(zeroOutput - u_R);
+            motorSignalL = (short)((zeroOutput + desiredRotRateL * 100 + signalL) / (1.8519 / 1.8519));// (zeroOutput + u_L);
+            motorSignalR = (short)((zeroOutput - desiredRotRateR * 100 - signalR) / (1.8519 / 1.8519));//(zeroOutput - u_R);
 
             // motorSignalL = (short) -desiredRotRateL;
             //motorSignalR = desiredRotRateR;
@@ -883,7 +903,7 @@ namespace DrRobot.JaguarControl
             double y_nearestPoint = mTraj * (x_nearestPoint - x_next) + y_next;
 
             // find point on trajectory dtrack meters ahead of x,y_nearestPoint
-            double dtrack = 2;
+            double dtrack = 1;
             //TODO be careful of direction of trajectory
             desiredT = Math.Atan2(y_next - y_prev, x_next - x_prev);
             double x_track = x_nearestPoint + dtrack * Math.Cos(desiredT);
@@ -1690,17 +1710,27 @@ namespace DrRobot.JaguarControl
             // Put code here to calculated weight. Feel free to use the
             // function map.GetClosestWallDistance from Map.cs.
 
-            if (inReachableSpace(p) || true)
+            if (true)
             {
 
                 double sigma_laser_percent = 0.01; // ( 1%, from datasheet);
                 double sigma_wall = 0.03; // cm
 
-                // take 8 arcs of the laser pi/4 apart
+                // take smart laser measurements
                 int numArcs = 5;
+                int[] arcList = new int[numArcs];
+
+                Random randArcs = new Random();
                 for (int i = 0; i < numArcs; i++)
                 {
-                    int laseriter = (int)Math.Round(((double)i / numArcs) * (LaserData.Length));
+                    arcList[i] = randArcs.Next(usefulLaserSize);
+                }
+
+
+
+                for (int i = 0; i < numArcs; i++)
+                {
+                    int laseriter = arcList[i]; //(int)Math.Round(((double)i / numArcs) * (LaserData.Length));
                     double laserangle = laserAngles[laseriter];
                     double sensor_measurement = (double)(LaserData[laseriter]) / 1000;
                     double minDist = map.GetClosestWallDistance(propagatedParticles[p].x, propagatedParticles[p].y, propagatedParticles[p].t - Math.PI / 2 + laserangle);
