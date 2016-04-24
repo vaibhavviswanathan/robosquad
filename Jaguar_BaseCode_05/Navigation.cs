@@ -246,6 +246,8 @@ namespace DrRobot.JaguarControl
         public Matrix P_t;
         public double x_kf, y_kf, t_kf;
 
+        public double x_pureodom, y_pureodom, t_pureodom;
+
 
         #endregion
 
@@ -343,6 +345,10 @@ namespace DrRobot.JaguarControl
             y_kf = y_est;
             t_kf = t_est;
 
+            x_pureodom = x;
+            y_pureodom = y;
+            t_pureodom = t;
+
             P_t = new Matrix(0, 0, 0,
                 0, 0, 0,
                 0, 0, 0); // TODO MAKE THESE BETTER
@@ -403,7 +409,9 @@ namespace DrRobot.JaguarControl
                 LocalizeEstWithParticleFilter();
 
                 // Estimate the global state of the robot with a kalman filter - x,y,t_kalman
-                LocalizeRealWithKalmanFilter();
+                //LocalizeRealWithKalmanFilter();
+                LocalizeRealWithICP();
+
 
                 /*
                 x_est = x_kf;
@@ -710,7 +718,8 @@ namespace DrRobot.JaguarControl
                 time = ts.TotalSeconds;
                 String newData = time.ToString() + " " + x.ToString() + " " + y.ToString() + " " + t.ToString()
                     + " " + x_kf.ToString() + " " + y_kf.ToString() + " " + t_kf.ToString()
-                    + " " + P_t.v11.ToString() + " " + P_t.v22.ToString() + " " + P_t.v12.ToString();
+                    + " " + x_est.ToString() + " " + y_est.ToString() + " " + t_est.ToString()
+                    + " " + x_pureodom.ToString() + " " + y_pureodom.ToString() + " " + t_pureodom.ToString();
 
                 logFile.WriteLine(newData);
             }
@@ -1274,6 +1283,180 @@ namespace DrRobot.JaguarControl
             // ****************** Additional Student Code: End   ************
         }
 
+        public void LocalizeRealWithICP()
+        {
+            // -- Prediction
+
+            // propagate x_t = f(x_t-1, u_t)
+            double[] propegatedEstimates = KalmanOdometryUpdate();
+
+            double x_prime = propegatedEstimates[0];
+            double y_prime = propegatedEstimates[1];
+            double t_prime = propegatedEstimates[2];
+
+            if (weShouldReSample)
+            {
+
+                // get innovation
+                double[] innovation = getInnovation(x_prime, y_prime, t_prime, LaserData.Length);
+
+                Console.WriteLine("Difference: {0}, {1}, {2}", x - x_prime, y - y_prime, t - t_prime);
+                Console.WriteLine("Innovation: {0}, {1}, {2}", innovation[0], innovation[1], innovation[2]);
+
+                x_prime += innovation[0];
+                y_prime += innovation[1];
+                t_prime += innovation[2];
+
+                if (t_prime > Math.PI)
+                    t_prime = t_prime - 2 * Math.PI;
+                else if (t_prime < -Math.PI)
+                    t_prime = t_prime + 2 * Math.PI;
+            }
+            x_kf = x_prime;
+            y_kf = y_prime;
+            t_kf = t_prime;
+
+
+
+        }
+
+        public double[] getInnovation(double xprime, double yprime, double tprime, int numArcs)
+        {
+
+            double[,] M_laser_temp = new double[numArcs, 2];
+            double[,] T_est_temp = new double[numArcs, 2];
+
+            int numValid_est = 0;
+            int numValid_laser = 0;
+
+            for (int i = 0; i < numArcs; i++)
+            {
+                int laseriter = (int)Math.Round(((double)i / numArcs) * (LaserData.Length));
+                double laserangle = laserAngles[laseriter];
+                double offset = -Math.PI / 2 + laserangle;
+                double dist_est = map.GetClosestWallDistance(xprime, yprime, tprime + offset);
+                double dist_sensor = (double)(LaserData[laseriter]) / 1000;
+                if (dist_est < 6.0)
+                {
+                    T_est_temp[numValid_est, 0] = dist_est * Math.Cos(offset);
+                    T_est_temp[numValid_est, 1] = dist_est * Math.Sin(offset);
+                    numValid_est++;
+                }
+
+                if (dist_sensor < 6.0)
+                {
+                    M_laser_temp[numValid_laser, 0] = dist_sensor * Math.Cos(offset);
+                    M_laser_temp[numValid_laser, 1] = dist_sensor * Math.Sin(offset);
+                    numValid_laser++;
+                }
+            }
+
+            //M_laser_temp = new double[,] { { -0.8000, -1.6000 }, { -0.8000, 0.4000 }, { 0.2000, - 0.6000 }, {1.2000, 0.4000}, {0.2000,  1.4000} };
+            //T_est_temp = new double[,] { { 0.5657, -1.6971 }, { -0.8485, -0.2828 }, { 0.5657, - 0.2828 }, { 0.5657,  1.1314 }, { -0.8485, 1.1314 } }; // 45 deg
+            //T_est_temp = new double[,] { { 0.1072, - 1.7856 }, { -0.8928, - 0.0536 }, { 0.4732, - 0.4196 }, { 0.8392,    0.9464 }, { -0.5268,    1.3124 } }; // 30 deg
+            //numValid_est = 5;
+            //numValid_laser = 5;
+
+
+            // make arrays without invalid readings
+
+            double[,] M_laser = new double[numValid_laser, 2];
+            double[,] T_est = new double[numValid_est, 2];
+
+            double[] centroid_est = { 0, 0 };
+            double[] centroid_laser = { 0, 0 };
+
+            // and compute centroids and reallocate to fresh array
+
+            for (int i = 0; i < numValid_est; i++)
+            {
+                T_est[i, 0] = T_est_temp[i, 0];
+                T_est[i, 1] = T_est_temp[i, 1];
+                centroid_est[0] += T_est[i, 0] / numValid_est;
+                centroid_est[1] += T_est[i, 1] / numValid_est;
+            }
+            for (int i = 0; i < numValid_laser; i++)
+            {
+                M_laser[i, 0] = M_laser_temp[i, 0];
+                M_laser[i, 1] = M_laser_temp[i, 1];
+                centroid_laser[0] += M_laser[i, 0] / numValid_laser;
+                centroid_laser[1] += M_laser[i, 1] / numValid_laser;
+            }
+
+            // centroid_est = new double[] { 0, 0 };
+            // centroid_laser = new double[] { 0, 0 };
+            
+            double x_out = centroid_est[0] - centroid_laser[0];
+            double y_out = centroid_est[1] - centroid_laser[1];
+
+            // recenter everything radially (squared) against discretized angles
+            int resolution = 100; // dont actually change this theres a bug if you do
+
+            double[] radial_laser = new double[resolution];
+            double[] radial_est = new double[resolution];
+
+            for (int i = 0; i < resolution; i++) // initialize
+            {
+                radial_laser[i] = 0;
+                radial_est[i] = 0;
+            }
+
+            for (int i = 0; i < numValid_est; i++)
+            {
+                double x = T_est[i, 0] - centroid_est[0];
+                double y = T_est[i, 1] - centroid_est[1];
+                double r = Math.Pow(x, 2) + Math.Pow(y, 2);
+                int arg = (int)Math.Round(resolution/2 * Math.Atan2(y, x) / Math.PI);
+                if (arg < 0) arg += resolution;
+                if (radial_est[arg] == 0)
+                    radial_est[arg] = r;
+                else
+                    radial_est[arg] = (radial_est[arg] + r) / 2;
+            }
+            for (int i = 0; i < numValid_laser; i++)
+            {
+                double x = M_laser[i, 0] - centroid_laser[0];
+                double y = M_laser[i, 1] - centroid_laser[1];
+                double r = Math.Pow(x, 2) + Math.Pow(y, 2);
+                int arg = (int)Math.Round(resolution * Math.Atan2(y, x) / Math.PI);
+                if (arg < 0) arg += resolution;
+                if(radial_laser[arg] == 0)
+                    radial_laser[arg] = r;
+                else
+                    radial_laser[arg] = (radial_laser[arg] + r)/2;
+            }
+
+            // find overlap metric
+            double[] overlapMetric = new double[resolution];
+            for (int dt = 0; dt < resolution; dt++)
+            {
+                double SSE = 0;
+                // compute overlap metric
+                for (int j = 0; j < resolution; j++)
+                    SSE += Math.Abs(radial_laser[j] - radial_est[(dt + j) % resolution]);
+                overlapMetric[dt] = SSE;
+            }
+
+            // minimize overlap metric
+            double t_out = 0;
+            double minSSE = double.PositiveInfinity;
+            for (int i = 0; i < resolution; i++)
+            {
+                if (overlapMetric[i] < minSSE)
+                {
+                    minSSE = overlapMetric[i];
+                    t_out = i;
+                }
+            }
+
+            t_out = (t_out / (double) resolution) * 2 * Math.PI;
+            if (t_out > Math.PI)
+                t_out = t_out - 2 * Math.PI;
+            else if (t_out < -Math.PI)
+                t_out = t_out + 2 * Math.PI;
+            double[] output = { x_out, y_out, t_out };
+            return output;
+        }
         
 
         public void LocalizeRealWithKalmanFilter()
@@ -1358,9 +1541,20 @@ namespace DrRobot.JaguarControl
 
         public double[] KalmanOdometryUpdate()
         {
+            // set random noise if simulating
+            double randr = 0;
+            double randl = 0;
+
+            if (jaguarControl.Simulating())
+            {
+                double k = 0.15;
+                randl = k * RandomGaussian();
+                randr = k * RandomGaussian();
+            }
+            
             // compute angle and distance travelled
-            double distanceTravelled = (wheelDistanceR + wheelDistanceL) / 2;
-            double angleTravelled = (wheelDistanceR - wheelDistanceL) / (2 * robotRadius); //check robot radius
+            double distanceTravelled = (wheelDistanceR * (1 + randr) + wheelDistanceL * (1 + randl)) / 2;
+            double angleTravelled = (wheelDistanceR * (1 + randr) - wheelDistanceL * (1 + randl)) / (2 * robotRadius); //check robot radius
 
             // Update the actual
             double x_out = x_kf + distanceTravelled * Math.Cos(t_kf + angleTravelled / 2);
@@ -1371,7 +1565,18 @@ namespace DrRobot.JaguarControl
             else if (t_out < -Math.PI)
                 t_out = t_out + 2 * Math.PI;
 
-            double [] output = {x_out, y_out, t_out};
+            double[] output = { x_out, y_out, t_out };
+
+            // Update the pure odometry
+            x_pureodom = x_pureodom + distanceTravelled * Math.Cos(t_pureodom + angleTravelled / 2);
+            y_pureodom = y_pureodom + distanceTravelled * Math.Sin(t_pureodom + angleTravelled / 2);
+            t_pureodom = t_pureodom + angleTravelled;
+            if (t_pureodom > Math.PI)
+                t_pureodom = t_pureodom - 2 * Math.PI;
+            else if (t_out < -Math.PI)
+                t_pureodom = t_pureodom + 2 * Math.PI;
+
+            
             return output;
         }
 
@@ -1512,8 +1717,6 @@ namespace DrRobot.JaguarControl
                     propagatedParticles[i].t = propagatedParticles[i].t - 2 * Math.PI;
                 else if (propagatedParticles[i].t < -Math.PI)
                     propagatedParticles[i].t = propagatedParticles[i].t + 2 * Math.PI;
-
-
 
             }
 
