@@ -649,10 +649,10 @@ mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
                 mapSegmentCorners[i, 0, 1] += 16;
                 mapSegmentCorners[i, 1, 1] += 16;
 
-                mapSegmentCorners[i, 0, 0] += -16;
-                mapSegmentCorners[i, 1, 0] += -16;
+                mapSegmentCorners[i, 0, 0] += 0; //-16;
+                mapSegmentCorners[i, 1, 0] += 0; //-16;
 
-                double scaling_factor = 0.5;
+                double scaling_factor = 1;
 
                 mapSegmentCorners[i, 0, 1] *= scaling_factor;
                 mapSegmentCorners[i, 1, 1] *= scaling_factor;

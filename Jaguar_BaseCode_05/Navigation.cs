@@ -867,6 +867,50 @@ namespace DrRobot.JaguarControl
         // THis function is called to follow a trajectory constructed by PRMMotionPlanner()
         private void TrackTrajectory()
         {
+
+            // determine point to track
+            double x_next = trajList[trajCurrentNode + 1].x;
+            double x_prev = trajList[trajCurrentNode].x;
+            double y_next = trajList[trajCurrentNode + 1].y;
+            double y_prev = trajList[trajCurrentNode].y;
+
+            double mTraj = (y_next - y_prev) / (x_next - x_prev);
+
+            double mPerp = -1 / mTraj;
+
+
+            double x_nearestPoint = mTraj == mPerp ? 100000000000 : (-y_next + y_est + mTraj * x_next - mPerp * x_est) / (mTraj - mPerp); // use x_des and y_des as points on the trajectory line, use x_est and y_est as points on the perp line
+            double y_nearestPoint = mTraj * (x_nearestPoint - x_next) + y_next;
+
+            // find point on trajectory dtrack meters ahead of x,y_nearestPoint
+            double dtrack = 2;
+            //TODO be careful of direction of trajectory
+            desiredT = Math.Atan2(y_next - y_prev, x_next - x_prev);
+            double x_track = x_nearestPoint + dtrack * Math.Cos(desiredT);
+            double y_track = y_nearestPoint + dtrack * Math.Sin(desiredT); // TODO check for direction
+
+            // check if point to track is too close to the next node determined from PRM then just track the node
+            if (Math.Sqrt(Math.Pow(x_track - x_next, 2) + Math.Pow(y_track - y_next, 2)) < dtrack)
+            {
+                x_des = x_next;
+                y_des = y_next;
+            }
+            else
+            {
+                x_des = x_track;
+                y_des = y_track;
+            }
+
+            double distToNextNode = Math.Sqrt(Math.Pow(x_est - x_next, 2) + Math.Pow(y_est - y_next, 2));
+            if (distToNextNode < 0.2)
+            {
+                if (trajCurrentNode < trajList.Length - 1)
+                {
+                    trajCurrentNode++;
+                }
+            }
+
+            /*
             double distToCurrentNode = Math.Sqrt(Math.Pow(x_est - trajList[trajCurrentNode].x, 2) + Math.Pow(y_est - trajList[trajCurrentNode].y, 2));
             if (distToCurrentNode < 0.3 && trajCurrentNode + 1 < trajSize)
             {
@@ -875,63 +919,15 @@ namespace DrRobot.JaguarControl
                 y_des = trajList[trajCurrentNode].y;
                 t_des = 0;
             }
+             */
 
             FlyToSetPoint();
         }
 
-  /*       // THis function is called to follow a trajectory constructed by PRMMotionPlanner(), writting by Aishvarya and Mo
-        private void TrackTrajectory()
-        {
-            
-            int xLength = x_traj.Length - 1;
-            int yLength = y_traj.Length - 1; 
-            
-            double destX    = x_traj[xLength];
-            double destY    = y_traj[yLength];
-            double pho_dest = Math.Sqrt(Math.Pow(destX - x, 2) + Math.Pow(destY - y, 2));
-
-            //Console.WriteLine("k: " + k);
-            //Console.WriteLine();
-            if ((pho_dest > 0.1) || (k < 5))
-            {
-                desiredX = x_traj[k];
-                desiredY = y_traj[k];
-
-                if (k == 0)
-                {
-                    desiredT = Math.Atan2((y_traj[k + 1] - y_traj[k]), (x_traj[k + 1] - x_traj[k]));
-                }
-                else if (k == x_traj.Length)
-                {
-                    desiredT = Math.Atan2((y_traj[yLength] - y_traj[yLength - 1]), (x_traj[xLength] - x_traj[xLength - 1]));
-                }
-                else
-                {
-                    desiredT = Math.Atan2((y_traj[k] - y_traj[k - 1]), (x_traj[k] - x_traj[k - 1]));
-                }
 
 
-                double distToNextPoint = Math.Sqrt(Math.Pow(x_traj[k] - x, 2) + Math.Pow(y_traj[k] - y, 2));
-                //Console.WriteLine("distance to Next Pt: " + distToNextPoint);
-                Boolean close = (distToNextPoint < 0.4);
-                //Console.WriteLine("xnext :" + x_traj[k] + " ynext: " + y_traj[k] + " tnext: " + desiredT);
-
-                FlyToSetPoint();
-                //Console.WriteLine("k: " + k);
-
-                if (close)
-                {
-                    k = k + 1;
-                    Console.WriteLine("update?");
-                }
-
-
-                //k = k + 1 ;
-            }
-           }
-*/
-           // follows a set of given milestones	
-           private void FollowMilestones()
+        // follows a set of given milestones	
+        private void FollowMilestones()
            {
            		if(milestoneNum == milestones.Length-1){
            			motionPlanRequired = false;
