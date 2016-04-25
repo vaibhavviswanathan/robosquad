@@ -683,6 +683,15 @@ mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
         // SENSOR ORIENTATION (t)
         double GetWallDistance(double x, double y, double t, int segment){
 
+            double x1 = mapSegmentCorners[segment, 0, 0];
+            double x2 = mapSegmentCorners[segment, 1, 0];
+
+            double y1 = mapSegmentCorners[segment, 0, 1];
+            double y2 = mapSegmentCorners[segment, 1, 1];
+
+            if ((Math.Abs(x1 - x) >= 6.0 && Math.Abs(x2 - x) >= 6.0) || (Math.Abs(y1 - y) >= 6.0 && Math.Abs(y2 - y) >= 6.0))
+                return 9999;
+
             double m_wall = slopes[segment];
             double b_wall = intercepts[segment];
             double size = segmentSizes[segment];
@@ -693,21 +702,15 @@ mapSegmentCorners[54,1,1] = -9.63 - 0.29 - 3.16 - 0.29;
             double x_c = m_wall == m_bot ? 100000000000 : (b_bot - b_wall) / (m_wall - m_bot);
             double y_c = m_wall * x_c + b_wall;
 
-            double x1 = mapSegmentCorners[segment, 0, 0];
-            double x2 = mapSegmentCorners[segment, 1, 0];
-
-            double y1 = mapSegmentCorners[segment, 0, 1];
-            double y2 = mapSegmentCorners[segment, 1, 1];
-
             double tol = 0.001;
 
             bool validSeg = ((x_c >= Math.Min(x1, x2) - tol) && (x_c <= Math.Max(x1, x2) + tol)) && ((y_c >= Math.Min(y1, y2) - tol) && (y_c <= Math.Max(y1, y2) + tol));
 
             // check if in right heading of the robot
-            validSeg &= (Math.Sign(t) == Math.Sign(Math.Atan2(y_c - y, x_c - x)));
+            validSeg &= (Math.Sign(t) == Math.Sign(y_c - y));
 
             double wallDist = validSeg ? Math.Sqrt(Math.Pow((x_c - x), 2) + Math.Pow((y_c - y), 2)) : Double.PositiveInfinity;
-
+            //double wallDist = validSeg ? (Math.Pow((x_c - x), 2) + Math.Pow((y_c - y), 2)) : Double.PositiveInfinity;
 
 
             // ****************** Additional Student Code: End   ************
