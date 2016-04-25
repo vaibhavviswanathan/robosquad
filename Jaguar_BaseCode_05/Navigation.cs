@@ -52,7 +52,7 @@ namespace DrRobot.JaguarControl
         private double maxVelocity = 0.15;
         private double Kpho = 12.2;
         private double Kalpha = 19;//8
-        private double Kbeta = -8;//-0.5//-1.0;
+        private double Kbeta = -4;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
         const double phoTrackingAccuracy = 0.10;
@@ -159,7 +159,7 @@ namespace DrRobot.JaguarControl
 
 
         // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
-        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0},{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { 3, 5, -4, -2, 0 }, { -1, 1, -5, -3, 0 } };
+        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0}, { -0, -2, 15.25, 19.25, 0 },{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { 3, 5, -4, -2, 0 }, { -1, 1, -5, -3, 0 } };
         public int milestoneNum = 0;
 
         public class Node
@@ -649,17 +649,17 @@ namespace DrRobot.JaguarControl
             }
             double errorL = desiredRotRateL - rotRateLest;
             errorLInt += (wheelDistanceL != 0 || MTSL > 0.5) ? errorL * measured_timestepL : 0;
-            signalL = Kp_PWM * errorL + Ki_PWM * errorLInt;
+            signalL = 0; //Kp_PWM * errorL + Ki_PWM * errorLInt;
 
             double errorR = desiredRotRateR - rotRateRest;
             errorRInt += (wheelDistanceR != 0 || MTSR > 0.5) ? errorR * measured_timestepR : 0;
-            signalR = Kp_PWM * errorR + Ki_PWM * errorRInt;
+            signalR = 0; // Kp_PWM * errorR + Ki_PWM * errorRInt;
 
 
             // The following settings are used to help develop the controller in simulation.
             // They will be replaced when the actual jaguar is used.
-            motorSignalL = (short)((zeroOutput + desiredRotRateL * 100 + signalL) / (1.8519 / 1.8519));// (zeroOutput + u_L);
-            motorSignalR = (short)((zeroOutput - desiredRotRateR * 100 - signalR) / (1.8519 / 1.8519));//(zeroOutput - u_R);
+            motorSignalL = (short)((zeroOutput + desiredRotRateL * 40 + signalL)*1.2 / (1.8519 / 1.8519));// (zeroOutput + u_L);
+            motorSignalR = (short)((zeroOutput - desiredRotRateR * 80 - signalR)*1.2 / (1.8519 / 1.8519));//(zeroOutput - u_R);
 
             // motorSignalL = (short) -desiredRotRateL;
             //motorSignalR = desiredRotRateR;
