@@ -50,8 +50,8 @@ namespace DrRobot.JaguarControl
         private double angleTravelled, distanceTravelled;
         private double diffEncoderPulseL, diffEncoderPulseR;
         private double maxVelocity = 0.15;
-        private double Kpho = 12.2;
-        private double Kalpha = 19;//8
+        private double Kpho = 14.2;
+        private double Kalpha = 27;//8
         private double Kbeta = -4;//-0.5//-1.0;
         const double alphaTrackingAccuracy = 0.10;
         const double betaTrackingAccuracy = 0.1;
@@ -63,8 +63,8 @@ namespace DrRobot.JaguarControl
         public double laserLost = 0;
 
         // TODO MAKE THESE ACTUAL VALUES
-        double std_l = 0.3; //1.2
-        double std_r = 0.3; //1.2;
+        double std_l = 0.1; //1.2
+        double std_r = 0.1; //1.2;
 
         public short K_P = 15;//15;
         public short K_I = 0;//0;
@@ -159,7 +159,7 @@ namespace DrRobot.JaguarControl
 
 
         // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
-        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0}, { -0, -2, 15.25, 19.25, 0 },{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { 3, 5, -4, -2, 0 }, { -1, 1, -5, -3, 0 } };
+        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0},{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { -1, 1, -5, -3, 0 }, { 3, 5, -4, -2, 0 } };
         public int milestoneNum = 0;
 
         public class Node
@@ -658,8 +658,8 @@ namespace DrRobot.JaguarControl
 
             // The following settings are used to help develop the controller in simulation.
             // They will be replaced when the actual jaguar is used.
-            motorSignalL = (short)((zeroOutput + desiredRotRateL * 40 + signalL)*1.2 / (1.8519 / 1.8519));// (zeroOutput + u_L);
-            motorSignalR = (short)((zeroOutput - desiredRotRateR * 80 - signalR)*1.2 / (1.8519 / 1.8519));//(zeroOutput - u_R);
+            motorSignalL = (short)((zeroOutput + desiredRotRateL * 120 + signalL)/ (1.8519 / 1.8519));// (zeroOutput + u_L);
+            motorSignalR = (short)((zeroOutput - desiredRotRateR * 120 - signalR)/ (1.8519 / 1.8519));//(zeroOutput - u_R);
 
             // motorSignalL = (short) -desiredRotRateL;
             //motorSignalR = desiredRotRateR;
@@ -910,7 +910,7 @@ namespace DrRobot.JaguarControl
             double y_track = y_nearestPoint + dtrack * Math.Sin(desiredT); // TODO check for direction
 
             // check if point to track is too close to the next node determined from PRM then just track the node
-            if (Math.Sqrt(Math.Pow(x_track - x_next, 2) + Math.Pow(y_track - y_next, 2)) < dtrack)
+            if (false)//Math.Sqrt(Math.Pow(x_track - x_next, 2) + Math.Pow(y_track - y_next, 2)) < dtrack)
             {
                 x_des = x_next;
                 y_des = y_next;
@@ -922,7 +922,7 @@ namespace DrRobot.JaguarControl
             }
 
             double distToNextNode = Math.Sqrt(Math.Pow(x_est - x_next, 2) + Math.Pow(y_est - y_next, 2));
-            if (distToNextNode < 0.2)
+            if (distToNextNode < 0.5)
             {
                 if (trajCurrentNode < trajList.Length - 1)
                 {
