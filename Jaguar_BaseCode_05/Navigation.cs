@@ -392,6 +392,7 @@ namespace DrRobot.JaguarControl
         // method to use. 
         public void runControlLoop()
         {
+            
             // Wait
             Thread.Sleep(500);
 
@@ -407,6 +408,8 @@ namespace DrRobot.JaguarControl
                 // functions to call here. For lab 1, we just call the function
                 // WallPositioning to have the robot maintain a constant distance
                 // to the wall (see lab manual).
+
+                DateTime start = DateTime.Now;
                 
                 // Update Sensor Readings
                 UpdateSensorMeasurements();
@@ -473,6 +476,13 @@ namespace DrRobot.JaguarControl
 
                 // Sleep to approximate 20 Hz update rate
                 Thread.Sleep(deltaT); //not sure if this works anymore..... -wf
+
+                /*
+                TimeSpan timeDiff = DateTime.Now - start;
+                Console.Write("Time spent this loop was:  ");
+                Console.Write(timeDiff.TotalMilliseconds);
+                Console.WriteLine(" ms.");
+                */
             }
         }
 
@@ -1611,17 +1621,21 @@ namespace DrRobot.JaguarControl
                 else if (propagatedParticles[i].t < -Math.PI)
                     propagatedParticles[i].t = propagatedParticles[i].t + 2 * Math.PI;
 
-
-
             }
+            
 
-
+            
             if (weShouldReSample)
             {
+                DateTime start = DateTime.Now;
                 for (int i = 0; i < numParticles; i++)
                 {
                     CalculateWeight(i);
                 }
+                TimeSpan timeDiff = DateTime.Now - start;
+                Console.Write("Time spent calculating weights was:  ");
+                Console.Write(timeDiff.TotalMilliseconds);
+                Console.WriteLine(" ms.");
 
 
                 // resample particles
