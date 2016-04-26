@@ -159,7 +159,8 @@ namespace DrRobot.JaguarControl
 
 
         // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
-        public double[,] milestones = new double[,] { {-4,-2, 15, 19, 0},{ -1, 1, 13.5, 14.5, 0 }, { 1, 3, 3, 5, 0 }, { -1, 1, -5, -3, 0 }, { 3, 5, -4, -2, 0 } };
+        public double[,] milestones = new double[,] {{-22,-20.5, 23, 25, 0}, {-26,-24, 23.5, 25.5, 0}, {-29.5,-27.5, 23.5, 25.5, 0},
+            { -29.5, -27.5, 16, 18, 0 }, { -28, -26, 4, 6, 0 }, { -24, -22, -5, -3, 0 }, { -22, -20, -3, -1, 0 } };
         public int milestoneNum = 0;
 
         public class Node
@@ -296,9 +297,9 @@ namespace DrRobot.JaguarControl
         public void Initialize()
         {
             // Initialize state estimates
-            x = -3.5;//initialX;
-            y = 17.25;//initialY;
-            t = 0;//initialT;
+            x = -21.5;//initialX;
+            y = 24.5;//initialY;
+            t = 3.14;//initialT;
 
             // Initialize state estimates
             x_est = x;//initialX;
@@ -954,7 +955,7 @@ namespace DrRobot.JaguarControl
            			Console.WriteLine("done");
            		}
            		else if(x_est > milestones[milestoneNum, 0] && x_est < milestones[milestoneNum, 1] && y_est > milestones[milestoneNum, 2] && y_est < milestones[milestoneNum, 3]){
-                FlyToSetPoint(); // TODO MILESTONE
+                //FlyToSetPoint(); // TODO MILESTONE
            			milestoneNum ++;
            			desiredX = 0.5* (milestones[milestoneNum, 0] + milestones[milestoneNum, 1]);
            			desiredY = 0.5* (milestones[milestoneNum, 2] + milestones[milestoneNum, 3]);
