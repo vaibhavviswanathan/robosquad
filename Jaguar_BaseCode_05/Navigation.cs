@@ -161,9 +161,9 @@ namespace DrRobot.JaguarControl
         // Preliminary round milestones in form {x_min, x_max, y_min, y_max, t}
         public double[,] milestones = new double[,] {{-22,-20.5, 23, 25, 0},
             {-26,-24, 23.5, 25.5, 0}, {-29.5,-27.5, 23.5, 25.5, 0},
-            { -29, -28, 18.5, 19, 0 }, { -28, -27.5, 17, 18, 0 },
-            { -26, -24, 6, 8, 0 }, { -28, -26, 4, 6, 0 },
-            { -24, -22, -5, -3, 0 },
+            { -29, -28, 20.5, 21, 0 }, { -29, -28, 18.5, 19, 0 }, { -28, -27.5, 17, 18, 0 },
+            { -26, -25, 17, 18, 0 }, { -26, -25, 8, 10, 0 }, { -28, -26, 4, 6, 0 },
+            { -24, -22, -6, -4, 0 },
             { -22, -20, -3, -1, 0 } };
         public int milestoneNum = 0;
 
@@ -780,8 +780,8 @@ namespace DrRobot.JaguarControl
             // Calculate delta X and delta Y
             //double delta_x = desiredX - x;
             //double delta_y = desiredY - y;
-            double delta_x = x_des - x;
-            double delta_y = y_des - y;
+            double delta_x = x_des - x_est;
+            double delta_y = y_des - y_est;
 
             // Calculate state
             double pho = Math.Sqrt(Math.Pow(delta_x, 2) + Math.Pow(delta_y, 2));
