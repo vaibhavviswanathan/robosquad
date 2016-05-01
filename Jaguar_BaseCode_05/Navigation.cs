@@ -305,6 +305,10 @@ namespace DrRobot.JaguarControl
             y = 24.5;//initialY;
             t = 3.14;//initialT;
 
+            x = -25;
+            y = 4;
+            t = 3.14;
+
             // Initialize state estimates
             x_est = x;//initialX;
             y_est = y;//initialY;
@@ -426,7 +430,11 @@ namespace DrRobot.JaguarControl
                 newLaserData = false; // reset newLaserData
 
                 // Estimate the global state of the robot -x_est, y_est, t_est (lab 4)
+                DateTime start = DateTime.Now;
                 LocalizeEstWithParticleFilter();
+                TimeSpan dt = DateTime.Now - start;
+                Console.Write("PF took ");
+                Console.WriteLine(dt.TotalMilliseconds);
 
                 // Estimate the global state of the robot with a kalman filter - x,y,t_kalman
                 //LocalizeRealWithKalmanFilter();
@@ -1623,9 +1631,11 @@ namespace DrRobot.JaguarControl
 
             if (weShouldReSample)
             {
+                Tuple<double[],double[]> corr = correction_to_pillars();
+
                 for (int i = 0; i < numParticles; i++)
                 {
-                    CalculateWeight(i);
+                    CalculateWeight(i, corr);
                 }
 
 
@@ -1705,10 +1715,11 @@ namespace DrRobot.JaguarControl
         // with the particle.
         // This function should calculate the weight associated with particle p.
 
-        void CalculateWeight(int p)
+        void CalculateWeight(int p, Tuple<double[],double[]> pillar_corr)
         {
 
             double weight = 0;
+            double dWeight = 0;
 
             // ****************** Additional Student Code: Start ************
 
@@ -1750,8 +1761,27 @@ namespace DrRobot.JaguarControl
 
                 }
 
+                if (pillar_corr.Item1.Length > 0)
+                {
+                    Tuple<double[], double[]> pillar_particle = get_expected_pillars(propagatedParticles[p].x, propagatedParticles[p].y, propagatedParticles[p].t);
+                    double[] particle_radii = pillar_particle.Item2;
+                    double[] pillar_radii = pillar_corr.Item2;
+
+                    double[] particle_angles = pillar_particle.Item1;
+                    double[] pillar_angles = pillar_corr.Item1;
+
+                    if (particle_angles.Length < pillar_angles.Length)
+                    {
+                        dWeight = pillarWeight(particle_angles, particle_radii, pillar_angles, pillar_radii);
+                    }
+                    else
+                    {
+                        dWeight = pillarWeight(pillar_angles, pillar_radii, particle_angles, particle_radii);
+                    }
+                }
+
             }
-            propagatedParticles[p].w = weight;
+            propagatedParticles[p].w = weight + dWeight;
 
         }
 
@@ -1765,13 +1795,166 @@ namespace DrRobot.JaguarControl
             return true;
         }
 
+        double pillarWeight(double[] smallerAngles, double[] smallerRadii, double[] biggerAngles, double[] biggerRadii)
+        {
+            //iterate through smallerAngles, find best matching angle in biggerAngles, compute weight and add
+
+            // sigmas
+            double sigma_angle = 0.2; // radians
+            double sigma_radius = 0.3; // meters
+            double weight = 0;
+
+            for (int i = 0; i < smallerAngles.Length; i++)
+            {
+                int bestMatchInd = 0;
+                double bestMatchAngle = double.PositiveInfinity;
+                for (int j = 0; j < biggerAngles.Length; j++)
+                {
+                    if (Math.Abs(biggerAngles[j] - smallerAngles[i]) < bestMatchAngle)
+                    {
+                        bestMatchAngle = Math.Abs(biggerAngles[j] - smallerAngles[i]);
+                        bestMatchInd = j;
+                    }
+                }
+                double da = bestMatchAngle;
+                double dr = Math.Abs(smallerRadii[i] - biggerRadii[bestMatchInd]);
+                weight += 1 / (Math.Sqrt(2 * Math.PI)) * Math.Exp(-Math.Pow(da, 2) / (2 * Math.Pow(sigma_angle, 2)));
+                weight += 1 / (Math.Sqrt(2 * Math.PI)) * Math.Exp(-Math.Pow(dr, 2) / (2 * Math.Pow(sigma_radius, 2)));
+            }
+            return weight;
+        }
+
+        Tuple<double[],double[]> correction_to_pillars()
+        {
+            // identify features
+            int[] features_start = new int[50];
+            int num_features = 0;
+            int[] features_end = new int[50];
+            bool feature_active = false;
+            
+            for (int i = 0; i < LaserData.Length; i++)
+            {
+                if (!feature_active)
+                {
+                    if (LaserData[i] < 6000)
+                    {
+                        features_start[num_features] = i;
+                        feature_active = true;
+                    }
+                }
+                else
+                {
+                    if (LaserData[i] >= 6000)
+                    {
+                        features_end[num_features] = i - 1;
+                        feature_active = false;
+                        num_features++;
+                    }
+                }
+            }
+
+            // identify pillars
+
+            double[] pillar_distance = new double[50];
+            double[] pillar_angle = new double[50];
+            int num_pillars = 0;
+
+            for (int i = 0; i < num_features; i++)
+            {
+                double pillar_start_r = ((double)LaserData[features_start[i]])/1000;
+                double pillar_start_a = laserAngles[features_start[i]];
+
+                double pillar_end_r = ((double)LaserData[features_end[i]]) / 1000;
+                double pillar_end_a = laserAngles[features_end[i]];
+
+                double da = pillar_end_a - pillar_start_a;
+                double dr = Math.Sqrt(Math.Pow(pillar_start_r, 2) + Math.Pow(pillar_end_r, 2) - 2 * pillar_start_r * pillar_end_r * Math.Cos(da));
+
+                if (dr < 0.8 && dr > 0.05) // consider it a pillar
+                {
+                    pillar_distance[num_pillars] = (pillar_start_r + pillar_end_r) / 2;
+                    pillar_angle[num_pillars] = (pillar_start_a + pillar_end_a) / 2;
+                    num_pillars++;
+                }
+
+            }
+
+            double[] pillar_distance_cpy = new double[num_pillars];
+            double[] pillar_angle_cpy = new double[num_pillars];
+
+            for (int i = 0; i < num_pillars; i++)
+            {
+                pillar_distance_cpy[i] = pillar_distance[i];
+                pillar_angle_cpy[i] = pillar_angle[i] - Math.PI/2;
+            }
+
+
+            Tuple<double[], double[]> output = new Tuple<double[], double[]>(pillar_angle_cpy, pillar_distance_cpy); 
+            return output;
+        }
+
+        Tuple<double[],double[]> get_expected_pillars(double x, double y, double t)
+        {
+            double[] pillars_x = new double[] { -3.35, 0, 3.35, 7, -3.35, 0, 3.35, 7, 3.35/2 };
+            double[] pillars_y = new double[] { -9.63, -9.63, -9.63, -9.63, -12.79, -12.79, -12.79, -12.79, -12.79 };
+            for (int i = 0; i < pillars_x.Length; i++)
+            {
+                pillars_x[i] -= 25;
+                pillars_y[i] += 16;
+            }
+
+            double[] radii = new double[pillars_x.Length];
+            double[] angles = new double[pillars_x.Length];
+            int numPillars = 0;
+
+            for (int i = 0; i < pillars_x.Length; i++)
+            {
+                double sqradius = Math.Pow(x - pillars_x[i], 2) + Math.Pow(y - pillars_y[i], 2);
+                if (sqradius <= 36)
+                {
+                    double angle = Math.Atan2(pillars_y[i] - y, pillars_x[i] - x);
+                    angle -= t;
+                    angle = -angle;
+                    if (angle > Math.PI)
+                        angle = angle - 2 * Math.PI;
+                    else if (angle < -Math.PI)
+                        angle = angle + 2 * Math.PI;
+
+                    if (angle > laserAngles[0] - Math.PI / 2 && angle < laserAngles[laserAngles.Length - 1] - Math.PI / 2 )
+                    {
+                        radii[numPillars] = Math.Sqrt(sqradius);
+                        angles[numPillars] = angle;
+                        numPillars++;
+                    }
+                }
+            }
+
+            // copy into new list of right size
+            double[] radii_cpy = new double[numPillars];
+            double[] angles_cpy = new double[numPillars];
+
+            for (int i = 0; i < numPillars; i++)
+            {
+                radii_cpy[i] = radii[i];
+                angles_cpy[i] = angles[i];
+            }
+
+            // sort lists by angle
+            Array.Sort(angles_cpy, radii_cpy);
+
+
+            Tuple<double[], double[]> output = new Tuple<double[], double[]>(angles_cpy, radii_cpy);
+            return output;
+        }
+
 
 
         // This function is used to initialize the particle states 
         // for particle filtering. It should pick a random location in the 
         // environment for each particle by calling SetRandomPos
 
-        void InitializeParticles() {
+        void InitializeParticles()
+        {
 
 
             numParticles = numParticles_temp;
