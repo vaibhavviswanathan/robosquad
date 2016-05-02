@@ -305,9 +305,9 @@ namespace DrRobot.JaguarControl
             y = 24.5;//initialY;
             t = 3.14;//initialT;
 
-            x = -25;
-            y = 4;
-            t = 3.14;
+            //x = -25;
+            //y = 4;
+            //t = 3.14;
 
             // Initialize state estimates
             x_est = x;//initialX;
